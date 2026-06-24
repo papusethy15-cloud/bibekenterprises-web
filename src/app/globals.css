@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #D97706;       /* orange — brand-600 */
+  --color-primary-dark: #c2580a;
+  --color-primary-light: #ffedd5;
+  --color-ink: #0a0a0b;           /* near-black for headings/footer */
+  --color-secondary: #1c1c21;
+  --color-warning: #ea580c;
+  --color-danger: #dc2626;
+  --color-neutral: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Poppins', sans-serif;
+  color: #111827;
+  background: #ffffff;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Subtle scrollbar styling that fits the orange/black/white palette */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+::-webkit-scrollbar-thumb {
+  background: #D97706;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c2580a;
+}
+
+/* Respect users who've asked for less motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── ServiceSlider responsive card widths ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .slider-card {
+    width: min(88vw, 340px) !important;
+  }
+}
+
+/* ── Hero appliance grid hover glow ────────────────────────────────────────── */
+.appliance-tile:hover {
+  border-color: rgba(217,119,6,0.35) !important;
+  background: rgba(217,119,6,0.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS — global fixes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Prevent horizontal overflow on any screen */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Ensure images and embeds never overflow */
+img, video, iframe, embed, object {
+  max-width: 100%;
+}
+
+/* ── Mobile bottom padding so floating buttons don't cover content ── */
+@media (max-width: 767px) {
+  /* Add breathing room at the bottom for the two FABs */
+  main, .page-content {
+    padding-bottom: 100px;
+  }
+
+  /* Stack footer columns on mobile */
+  footer .footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Service cards — full width on smallest screens */
+  .service-card-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .service-card-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Touch targets — minimum 44×44px for tap comfort ── */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ── Animations: fade-in-up used by header dropdown & others ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.2s ease-out both;
+}
+
+/* ── Safe area insets for notched/punch-hole phones ── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .float-call-btn,
+  .float-chat-btn {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
