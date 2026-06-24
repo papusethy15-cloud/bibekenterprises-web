@@ -1,16 +1,18 @@
 /**
  * api.ts — Axios client for client-side API calls (booking form, auth, etc.)
  *
+ * Uses API_URL from config.ts as the single source of truth.
  * Domain context is passed via the X-Domain-Slug header so the backend
  * can scope responses (e.g. city prices) to the correct domain.
  */
 import axios from "axios";
+import { API_URL, DOMAIN_HEADER } from "@/lib/config";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
-    "X-Domain-Slug": process.env.NEXT_PUBLIC_DOMAIN_SLUG || "bibekenterprises",
+    "X-Domain-Slug": DOMAIN_HEADER,
   },
 });
 

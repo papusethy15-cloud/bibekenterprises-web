@@ -1,13 +1,14 @@
 /**
- * domain.ts  — Server-side domain resolution
+ * domain.ts — Server-side domain resolution (SSR / ISR)
  *
- * At build/request time, Next.js reads NEXT_PUBLIC_DOMAIN_SLUG (and, when
- * present, NEXT_PUBLIC_DOMAIN_ID) from the environment (set per-deployment).
- * The slug/id must match a row stored in the database via the Admin Dashboard.
+ * Uses API_URL from config.ts as the single source of truth.
+ * Both local dev (http://localhost:8000/api/v1) and production
+ * (https://api.bibekenterprises.com/api/v1) are handled automatically
+ * via NEXT_PUBLIC_API_URL in the appropriate .env file.
  *
  * Flow:
  *   1. Each domain's frontend is deployed as its own Next.js instance.
- *   2. NEXT_PUBLIC_DOMAIN_SLUG / NEXT_PUBLIC_DOMAIN_ID identify the domain row.
+ *   2. DOMAIN_SLUG / DOMAIN_ID from config.ts identify the domain row.
  *   3. On every request the server calls the backend to fetch:
  *        - Domain metadata    (name, logo_url, primary_color …)
  *        - Domain SEO data    (meta_title, og_image_url, schema_json …)
@@ -32,20 +33,7 @@ import {
   City,
 } from "@/types";
 import { slugify } from "@/lib/slug";
-
-// Server-side (SSR/ISR) fetches must use an absolute URL — use BACKEND_URL
-// when set, otherwise fall back to the absolute localhost address.
-// NEXT_PUBLIC_API_URL is now set to "/api/v1" (relative, for browser proxy)
-// which would break server-side fetch, so we never use it here directly.
-const API_BASE =
-  process.env.BACKEND_URL
-    ? `${process.env.BACKEND_URL}/api/v1`
-    : "http://localhost:8000/api/v1";
-
-const DOMAIN_SLUG =
-  process.env.NEXT_PUBLIC_DOMAIN_SLUG || "bibekenterprises";
-
-const DOMAIN_ID = process.env.NEXT_PUBLIC_DOMAIN_ID || "";
+import { API_URL, DOMAIN_SLUG, DOMAIN_ID } from "@/lib/config";
 
 // Revalidate window (seconds) — Admin Dashboard edits show up within this time.
 const REVALIDATE = 60;
@@ -53,7 +41,7 @@ const REVALIDATE = 60;
 // ── internal fetch helper ─────────────────────────────────────────────────────
 async function apiFetch<T>(path: string, revalidate: number = REVALIDATE): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${API_URL}${path}`, {
       next: { revalidate },
     });
     if (!res.ok) return null;
