@@ -54,11 +54,11 @@ export default function HowItWorks({ brand }: Props) {
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-20 left-1/4 w-[22rem] h-[22rem] rounded-full opacity-[0.05] animate-blob"
-          style={{ background: brand }}
+          style={{ background: "#1A3FA4" }}
         />
         <div
           className="absolute -bottom-24 right-1/4 w-[20rem] h-[20rem] rounded-full opacity-[0.05] animate-blob"
-          style={{ background: brand, animationDelay: "5s" }}
+          style={{ background: "#F26522", animationDelay: "5s" }}
         />
       </div>
 
@@ -67,7 +67,7 @@ export default function HowItWorks({ brand }: Props) {
           ref={headerRef}
           className={`text-center mb-16 ${headerVisible ? "animate-fade-in-up" : "opacity-0"}`}
         >
-          <span style={{ color: brand }} className="text-sm font-bold uppercase tracking-wider">
+          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: "#F26522" }}>
             Simple Process
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink-900 mt-2 mb-4">
@@ -90,7 +90,7 @@ export default function HowItWorks({ brand }: Props) {
             aria-hidden
             className="hidden md:block absolute top-9 left-[12.5%] h-0.5 rounded-full transition-all ease-out"
             style={{
-              background: `linear-gradient(90deg, ${brand}, ${brand}aa)`,
+              background: "linear-gradient(90deg, #1A3FA4, rgba(26,63,164,0.55))",
               width: lineDrawn ? "75%" : "0%",
               transitionDuration: "1400ms",
             }}
@@ -110,7 +110,7 @@ export default function HowItWorks({ brand }: Props) {
                 <div
                   className="relative z-10 rounded-2xl px-5 py-8 bg-white border border-ink-100 transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:border-transparent"
                   style={{
-                    boxShadow: isHovered ? "0 20px 40px -12px rgba(217,119,6,0.28)" : "0 1px 2px rgba(10,10,11,0.04)",
+                    boxShadow: isHovered ? "0 20px 40px -12px rgba(26,63,164,0.28)" : "0 1px 2px rgba(10,10,11,0.04)",
                   }}
                 >
                   {/* Number badge — scales + glows on hover, icon does a tiny bounce */}
@@ -118,13 +118,13 @@ export default function HowItWorks({ brand }: Props) {
                     <div
                       className="absolute inset-0 rounded-full blur-md transition-opacity duration-300"
                       style={{
-                        background: brand,
-                        opacity: isHovered ? 0.45 : 0,
+                        background: "#1A3FA4",
+                        opacity: isHovered ? 0.4 : 0,
                       }}
                     />
                     <div
-                      style={{ background: brand }}
-                      className="relative flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold shadow-brand transition-transform duration-300 ease-out group-hover:scale-110"
+                      style={{ background: "#1A3FA4" }}
+                      className="relative flex items-center justify-center w-16 h-16 rounded-full text-white text-xl font-bold transition-transform duration-300 ease-out group-hover:scale-110"
                     >
                       {item.step}
                     </div>
@@ -137,7 +137,7 @@ export default function HowItWorks({ brand }: Props) {
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-ink-900 mb-2 transition-colors duration-300" style={{ color: isHovered ? brand : undefined }}>
+                  <h3 className="font-bold text-ink-900 mb-2 transition-colors duration-300" style={{ color: isHovered ? "#1A3FA4" : undefined }}>
                     {item.title}
                   </h3>
                   <p className="text-sm text-ink-400 leading-relaxed">{item.desc}</p>
@@ -148,7 +148,7 @@ export default function HowItWorks({ brand }: Props) {
                   <div
                     aria-hidden
                     className="md:hidden mx-auto w-0.5 h-8 my-1"
-                    style={{ background: `linear-gradient(180deg, ${brand}55, ${brand}11)` }}
+                    style={{ background: "linear-gradient(180deg, rgba(26,63,164,0.5), rgba(26,63,164,0.1))" }}
                   />
                 )}
               </div>

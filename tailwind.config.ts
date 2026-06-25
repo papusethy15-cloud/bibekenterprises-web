@@ -12,37 +12,52 @@ const config: Config = {
         sans: ["Inter", "Poppins", "ui-sans-serif", "system-ui"],
       },
       colors: {
-        // Bibek Enterprises brand palette — orange / white / black
+        // ── Bibek Enterprises Brand Palette ──
+        // Primary: Royal Blue (BIBEK wordmark)
         brand: {
-          50: "#fff7ed",
-          100: "#ffedd5",
-          200: "#fed7aa",
-          300: "#fdba74",
-          400: "#fb923c",
-          500: "#f97316",
-          600: "#D97706", // matches Admin Dashboard → Domains → primary_color
-          700: "#c2580a",
-          800: "#9a3412",
-          900: "#7c2d12",
+          50: "#e8edf9",
+          100: "#c5d0ef",
+          200: "#9fb0e3",
+          300: "#7890d7",
+          400: "#5b77ce",
+          500: "#3d5fc4",
+          600: "#1A3FA4", // PRIMARY BRAND BLUE — matches logo
+          700: "#142d7a",
+          800: "#0e1e52",
+          900: "#080f2b",
+        },
+        // Accent: Vibrant Orange (wrench/tool icon + tagline)
+        accent: {
+          50: "#fff0e8",
+          100: "#ffd8c2",
+          200: "#ffbd99",
+          300: "#ffa170",
+          400: "#ff8a50",
+          500: "#F26522", // ACCENT ORANGE — matches logo
+          600: "#d4531a",
+          700: "#b04015",
+          800: "#8a300f",
+          900: "#62200a",
         },
         ink: {
-          50: "#f7f7f8",
-          100: "#eeeef0",
-          200: "#d9d9dd",
-          300: "#b3b3ba",
-          400: "#7a7a85",
-          500: "#4a4a54",
-          600: "#2e2e35",
-          700: "#1c1c21",
-          800: "#121215",
-          900: "#0a0a0b", // near-black
+          50: "#f5f5f7",
+          100: "#e8e8ed",
+          200: "#d1d1db",
+          300: "#a8a8bb",
+          400: "#72728a",
+          500: "#4a4a62",
+          600: "#2e2e42",
+          700: "#1c1c2e",
+          800: "#12121e",
+          900: "#0D0D0D", // near-black — "ENTERPRISES" wordmark
         },
       },
       transitionDuration: {
         "600": "600ms",
       },
       boxShadow: {
-        brand: "0 8px 24px -8px rgba(217,119,6,0.35)",
+        brand: "0 8px 24px -8px rgba(26,63,164,0.35)",
+        "brand-orange": "0 8px 24px -8px rgba(242,101,34,0.35)",
       },
       keyframes: {
         "fade-in-up": {

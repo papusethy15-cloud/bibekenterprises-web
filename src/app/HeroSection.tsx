@@ -91,7 +91,7 @@ function StatItem({
   const val = useCountUp(target, active);
   return (
     <div className="text-center sm:text-left">
-      <div className="text-xl md:text-2xl font-extrabold tabular-nums leading-none" style={{ color: brand }}>
+      <div className="text-xl md:text-2xl font-extrabold tabular-nums leading-none" style={{ color: dark ? "#F26522" : "#1A3FA4" }}>
         {val.toLocaleString("en-IN")}{suffix}
       </div>
       <div className={`text-[11px] mt-0.5 font-medium ${dark ? "text-white/45" : "text-ink-400"}`}>
@@ -128,7 +128,7 @@ export default function HeroSection({
   const borderMuted  = dark ? "border-white/15"      : "border-ink-100";
   const chipBase     = dark
     ? "bg-white/8 border-white/15 text-white hover:bg-white/15"
-    : "bg-white border-ink-200 text-ink-700 hover:border-amber-400 hover:bg-amber-50";
+    : "bg-white border-ink-200 text-ink-700 hover:border-blue-400 hover:bg-blue-50";
 
   // ── animation helper: slide-up with stagger ──────────────────────────────
   const su = (delay: number) => ({
@@ -145,18 +145,18 @@ export default function HeroSection({
         className={`${su(0).className} inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 mb-7 border ${
           dark
             ? "bg-white/8 border-white/15 text-white"
-            : "bg-amber-50 border-amber-200 text-amber-800"
+            : "bg-blue-50 border-blue-200 text-blue-900"
         }`}
       >
         {/* Live dot */}
         <span className="relative flex h-2.5 w-2.5">
           <span
             className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
-            style={{ background: brand }}
+            style={{ background: "#F26522" }}
           />
           <span
             className="relative inline-flex h-2.5 w-2.5 rounded-full"
-            style={{ background: brand }}
+            style={{ background: "#F26522" }}
           />
         </span>
         <span className="text-sm font-semibold">⭐ Trusted by 10,000+ happy customers</span>
@@ -181,7 +181,7 @@ export default function HeroSection({
         <span className="block overflow-hidden">
           <span
             className={visible ? "block animate-fade-in-up" : "block opacity-0 translate-y-6"}
-            style={{ color: brand, animationDelay: "170ms", animationFillMode: "both" }}
+            style={{ color: "#1A3FA4", animationDelay: "170ms", animationFillMode: "both" }}
           >
             Home Appliance
           </span>
@@ -207,7 +207,7 @@ export default function HeroSection({
         {typing && (
           <span
             className="inline-block w-0.5 h-[1.1em] align-middle ml-0.5 animate-pulse rounded-sm"
-            style={{ background: brand, verticalAlign: "middle" }}
+            style={{ background: "#F26522", verticalAlign: "middle" }}
           />
         )}
         {/* Reserve space so layout doesn't jump */}
@@ -239,7 +239,7 @@ export default function HeroSection({
         <Link
           href="/booking"
           className="group relative overflow-hidden inline-flex items-center justify-center gap-2 text-white font-bold px-7 py-3.5 rounded-xl text-base shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
-          style={{ background: brand, boxShadow: `0 8px 24px -6px ${brand}60` }}
+          style={{ background: "#F26522", boxShadow: "0 8px 24px -6px rgba(242,101,34,0.55)" }}
         >
           {/* Shine sweep */}
           <span
@@ -291,7 +291,7 @@ export default function HeroSection({
           >
             <span
               className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[13px]"
-              style={{ background: dark ? "rgba(255,255,255,0.08)" : "#fff7ed", border: `1px solid ${brand}40` }}
+              style={{ background: dark ? "rgba(255,255,255,0.08)" : "#e8edf9", border: `1px solid rgba(26,63,164,0.3)` }}
             >
               {item.icon}
             </span>
@@ -317,7 +317,7 @@ export default function HeroSection({
         <StatItem target={500}   suffix="+"  label="Certified Technicians" active={statsVisible} brand={brand} dark={dark} />
         <StatItem target={50}    suffix="+"  label="Cities Covered"         active={statsVisible} brand={brand} dark={dark} />
         <div className="text-center sm:text-left">
-          <div className="text-xl md:text-2xl font-extrabold leading-none" style={{ color: brand }}>
+          <div className="text-xl md:text-2xl font-extrabold leading-none" style={{ color: dark ? "#F26522" : "#1A3FA4" }}>
             4.8★
           </div>
           <div className={`text-[11px] mt-0.5 font-medium ${dark ? "text-white/45" : "text-ink-400"}`}>

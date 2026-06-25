@@ -142,7 +142,7 @@ export default function ServiceSlider({ services, brand }: Props) {
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `radial-gradient(ellipse 60% 55% at 30% 50%, ${brand}18 0%, transparent 70%)`,
+          background: "radial-gradient(ellipse 60% 55% at 30% 50%, rgba(26,63,164,0.10) 0%, transparent 70%)",
         }}
       />
 
@@ -161,17 +161,17 @@ export default function ServiceSlider({ services, brand }: Props) {
               What We Repair &amp; Maintain
             </h2>
             {selectedCity && (
-              <p className="text-sm mt-1" style={{ color: `${brand}cc` }}>
-                Showing prices for <strong style={{ color: brand }}>{selectedCity.name}</strong>
+              <p className="text-sm mt-1" style={{ color: "rgba(242,101,34,0.8)" }}>
+                Showing prices for <strong style={{ color: "#F26522" }}>{selectedCity.name}</strong>
               </p>
             )}
           </div>
           {/* Prev / Next */}
           <div className="hidden sm:flex items-center gap-2">
-            <NavBtn onClick={goPrev} label="Previous" brand={brand}>
+            <NavBtn onClick={goPrev} label="Previous" brand="#1A3FA4">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </NavBtn>
-            <NavBtn onClick={goNext} label="Next" brand={brand}>
+            <NavBtn onClick={goNext} label="Next" brand="#1A3FA4">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </NavBtn>
           </div>
@@ -195,9 +195,9 @@ export default function ServiceSlider({ services, brand }: Props) {
               {/* Crossfade images */}
               <div className="absolute inset-0">
                 {prev !== null && (
-                  <ActiveImage key={`p-${prev}`} service={services[prev]} brand={brand} fading />
+                  <ActiveImage key={`p-${prev}`} service={services[prev]} brand="#1A3FA4" fading />
                 )}
-                <ActiveImage key={`a-${active}`} service={svc} brand={brand} fading={false} />
+                <ActiveImage key={`a-${active}`} service={svc} brand="#1A3FA4" fading={false} />
               </div>
 
               {/* ── Info panel on solid dark base ── */}
@@ -212,7 +212,7 @@ export default function ServiceSlider({ services, brand }: Props) {
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <span
                     className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full text-white"
-                    style={{ background: brand }}
+                    style={{ background: "#1A3FA4" }}
                   >
                     {icon} {svc.category_name}
                   </span>
@@ -224,7 +224,7 @@ export default function ServiceSlider({ services, brand }: Props) {
                   {selectedCity && isOverride && (
                     <span
                       className="text-[11px] font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: `${brand}30`, color: brand }}
+                      style={{ background: "rgba(26,63,164,0.18)", color: "#1A3FA4" }}
                     >
                       📍 {selectedCity.name} price
                     </span>
@@ -245,7 +245,7 @@ export default function ServiceSlider({ services, brand }: Props) {
                   <div>
                     <span className="text-xs text-white/40 uppercase tracking-wider">Starting from</span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-extrabold" style={{ color: brand }}>
+                      <span className="text-2xl font-extrabold" style={{ color: "#1A3FA4" }}>
                         ₹{price?.toLocaleString("en-IN")}
                       </span>
                       {selectedCity && isOverride && svc.base_price !== price && (
@@ -267,7 +267,7 @@ export default function ServiceSlider({ services, brand }: Props) {
                     draggable={false}
                     onClick={(e) => isDrag && e.preventDefault()}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:gap-3 hover:opacity-90 active:scale-95"
-                    style={{ background: brand, boxShadow: `0 4px 14px -4px ${brand}80` }}
+                    style={{ background: "#F26522", boxShadow: "0 4px 14px -4px rgba(242,101,34,0.5)" }}
                   >
                     Book Now
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -292,7 +292,7 @@ export default function ServiceSlider({ services, brand }: Props) {
               >
                 <div
                   className="h-full transition-none"
-                  style={{ width: `${progress}%`, background: brand }}
+                  style={{ width: `${progress}%`, background: "#F26522" }}
                 />
               </div>
 
@@ -321,7 +321,7 @@ export default function ServiceSlider({ services, brand }: Props) {
                   className="h-1.5 rounded-full transition-all duration-300"
                   style={{
                     width: i === active ? 22 : 6,
-                    background: i === active ? brand : "rgba(255,255,255,0.2)",
+                    background: i === active ? "#F26522" : "rgba(255,255,255,0.2)",
                   }}
                 />
               ))}
@@ -339,8 +339,8 @@ export default function ServiceSlider({ services, brand }: Props) {
                   onClick={() => go(i)}
                   className="hidden lg:flex items-center gap-3 rounded-xl p-3 text-left w-full transition-all duration-300"
                   style={{
-                    background: isAct ? `${brand}18` : "rgba(255,255,255,0.03)",
-                    border: `1.5px solid ${isAct ? `${brand}55` : "rgba(255,255,255,0.06)"}`,
+                    background: isAct ? "rgba(26,63,164,0.14)" : "rgba(255,255,255,0.03)",
+                    border: `1.5px solid ${isAct ? "rgba(26,63,164,0.5)" : "rgba(255,255,255,0.06)"}`,
                   }}
                 >
                   {/* Thumbnail */}
@@ -348,7 +348,7 @@ export default function ServiceSlider({ services, brand }: Props) {
                     className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center text-2xl"
                     style={{
                       background: isAct
-                        ? `linear-gradient(135deg,${brand}44,${brand}88)`
+                        ? "linear-gradient(135deg,rgba(26,63,164,0.27),rgba(26,63,164,0.53))"
                         : "rgba(255,255,255,0.06)",
                     }}
                   >
@@ -370,14 +370,14 @@ export default function ServiceSlider({ services, brand }: Props) {
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span
                         className="text-xs font-semibold"
-                        style={{ color: isAct ? brand : "rgba(255,255,255,0.3)" }}
+                        style={{ color: isAct ? "#F26522" : "rgba(255,255,255,0.3)" }}
                       >
                         ₹{ep.price?.toLocaleString("en-IN")}
                       </span>
                       {selectedCity && ep.isOverride && (
                         <span
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: `${brand}25`, color: brand }}
+                          style={{ background: `rgba(26,63,164,0.15)`, color: brand }}
                         >
                           {selectedCity.name}
                         </span>
@@ -448,12 +448,12 @@ function ActiveImage({ service, brand, fading }: {
       ) : (
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-4"
-          style={{ background: `linear-gradient(140deg,#1a1a22 0%,${brand}28 50%,#0f0f12 100%)` }}
+          style={{ background: `linear-gradient(140deg,#1a1a22 0%,rgba(26,63,164,0.16) 50%,#0f0f12 100%)` }}
         >
-          <div className="absolute w-64 h-64 rounded-full opacity-10" style={{ border: `2px solid ${brand}` }} />
-          <div className="absolute w-40 h-40 rounded-full opacity-20" style={{ border: `2px solid ${brand}` }} />
+          <div className="absolute w-64 h-64 rounded-full opacity-10" style={{ border: "2px solid #1A3FA4" }} />
+          <div className="absolute w-40 h-40 rounded-full opacity-20" style={{ border: "2px solid #1A3FA4" }} />
           <span className="text-8xl relative z-10 drop-shadow-2xl">{icon}</span>
-          <span className="relative z-10 text-sm font-bold uppercase tracking-widest" style={{ color: brand }}>
+          <span className="relative z-10 text-sm font-bold uppercase tracking-widest" style={{ color: "#1A3FA4" }}>
             {service.category_name}
           </span>
         </div>

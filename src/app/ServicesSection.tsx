@@ -28,6 +28,8 @@ interface Props {
 export default function ServicesSection({ services, categories, brand, siteName }: Props) {
   const { ref: headerRef, isVisible: headerVisible } = useScrollReveal<HTMLDivElement>();
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [showAll, setShowAll] = useState(false);
+  const LIMIT = 8;
 
   // Only show tabs for categories that actually have a visible service —
   // no point offering an empty filter.
@@ -52,11 +54,11 @@ export default function ServicesSection({ services, categories, brand, siteName 
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-24 -right-24 w-[28rem] h-[28rem] rounded-full opacity-[0.06] animate-blob"
-          style={{ background: brand }}
+          style={{ background: "#1A3FA4" }}
         />
         <div
           className="absolute -bottom-32 -left-24 w-[24rem] h-[24rem] rounded-full opacity-[0.05] animate-blob"
-          style={{ background: brand, animationDelay: "4s" }}
+          style={{ background: "#F26522", animationDelay: "4s" }}
         />
       </div>
 
@@ -65,7 +67,7 @@ export default function ServicesSection({ services, categories, brand, siteName 
           ref={headerRef}
           className={`text-center mb-10 ${headerVisible ? "animate-fade-in-up" : "opacity-0"}`}
         >
-          <span style={{ color: brand }} className="text-sm font-bold uppercase tracking-wider">
+          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: "#F26522" }}>
             What We Offer
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink-900 mt-2 mb-4">
@@ -104,8 +106,8 @@ export default function ServicesSection({ services, categories, brand, siteName 
                 className="px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-1.5"
                 style={
                   activeCategory === cat.category_id
-                    ? { background: brand, borderColor: brand, color: "#fff" }
-                    : { borderColor: "#e5e5e8", color: "#4a4a54", background: "#fff" }
+                    ? { background: "#1A3FA4", borderColor: "#1A3FA4", color: "#fff" }
+                    : { borderColor: "#d1d5db", color: "#374151", background: "#fff" }
                 }
               >
                 <span>{cat.icon || iconFor(cat.name)}</span>
@@ -116,17 +118,30 @@ export default function ServicesSection({ services, categories, brand, siteName 
         )}
 
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filtered.map((svc, i) => (
-              <ServiceCard
-                key={svc.domain_service_id}
-                service={svc}
-                brand={brand}
-                icon={iconFor(svc.category_name)}
-                index={i}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {(showAll ? filtered : filtered.slice(0, LIMIT)).map((svc, i) => (
+                <ServiceCard
+                  key={svc.domain_service_id}
+                  service={svc}
+                  brand={brand}
+                  icon={iconFor(svc.category_name)}
+                  index={i}
+                />
+              ))}
+            </div>
+            {filtered.length > LIMIT && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowAll((s) => !s)}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 font-semibold text-sm transition-all hover:-translate-y-0.5"
+                  style={{ borderColor: "#1A3FA4", color: "#1A3FA4", background: "white" }}
+                >
+                  {showAll ? "Show Less ↑" : `Show ${filtered.length - LIMIT} More Services ↓`}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-center text-ink-400 py-12">No services found in this category yet.</p>
         )}
@@ -136,7 +151,7 @@ export default function ServicesSection({ services, categories, brand, siteName 
           <a
             href="/services"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-white text-base hover:opacity-90 hover:-translate-y-0.5 transition-all duration-300 shadow-lg"
-            style={{ background: brand, boxShadow: `0 12px 28px -12px ${brand}80` }}
+            style={{ background: "#F26522", boxShadow: "0 12px 28px -12px rgba(242,101,34,0.55)" }}
           >
             View All Services
             <span className="text-lg">→</span>

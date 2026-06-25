@@ -159,10 +159,10 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
             <div className="space-y-5">
               {/* Dev-mode OTP hint — remove once SMS gateway is wired */}
               {devOtp && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm">
                   <span className="font-semibold text-amber-700">🛠 Dev mode</span>
                   <span className="text-amber-600"> — OTP: </span>
-                  <span className="font-mono font-bold text-amber-800 tracking-widest">{devOtp}</span>
+                  <span className="font-mono font-bold text-blue-800 tracking-widest">{devOtp}</span>
                 </div>
               )}
 

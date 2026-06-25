@@ -100,7 +100,7 @@ export default function CityPriceSelector({
 
       {/* ── Unavailable warning ── */}
       {!isAvailable && (
-        <div className="mx-5 mt-4 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 flex items-start gap-2">
+        <div className="mx-5 mt-4 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-2.5 flex items-start gap-2">
           <span className="mt-0.5 shrink-0">⚠️</span>
           <span>This service may be unavailable in <strong>{selectedCity}</strong>. Showing base pricing — please confirm at booking.</span>
         </div>
@@ -141,7 +141,7 @@ export default function CityPriceSelector({
           </div>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((s) => (
-              <span key={s} className="text-amber-400 text-[10px]">★</span>
+              <span key={s} className="text-orange-400 text-[10px]">★</span>
             ))}
             <span className="text-[10px] text-ink-400 ml-0.5">4.8</span>
           </div>

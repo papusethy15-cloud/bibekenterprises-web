@@ -3,12 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #D97706;       /* orange — brand-600 */
-  --color-primary-dark: #c2580a;
-  --color-primary-light: #ffedd5;
-  --color-ink: #0a0a0b;           /* near-black for headings/footer */
-  --color-secondary: #1c1c21;
-  --color-warning: #ea580c;
+  /* ── Bibek Enterprises Brand Palette ── */
+  /* Primary: Royal Blue (from "BIBEK" wordmark) */
+  --color-primary: #1A3FA4;
+  --color-primary-dark: #142d7a;
+  --color-primary-light: #e8edf9;
+  /* Accent: Vibrant Orange (from wrench/tool icon & tagline lines) */
+  --color-accent: #F26522;
+  --color-accent-dark: #d4531a;
+  --color-accent-light: #fff0e8;
+  /* Neutrals */
+  --color-ink: #0D0D0D;
+  --color-secondary: #1c2240;
+  --color-warning: #F26522;
   --color-danger: #dc2626;
   --color-neutral: #6b7280;
 }
@@ -44,11 +51,11 @@ body {
   background: #f4f4f5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D97706;
+  background: #1A3FA4;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c2580a;
+  background: #142d7a;
 }
 
 /* Respect users who've asked for less motion */
@@ -70,8 +77,8 @@ body {
 
 /* ── Hero appliance grid hover glow ────────────────────────────────────────── */
 .appliance-tile:hover {
-  border-color: rgba(217,119,6,0.35) !important;
-  background: rgba(217,119,6,0.08) !important;
+  border-color: rgba(26,63,164,0.35) !important;
+  background: rgba(26,63,164,0.08) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -136,4 +143,68 @@ img, video, iframe, embed, object {
   .float-chat-btn {
     margin-bottom: env(safe-area-inset-bottom, 0px);
   }
+}
+
+/* ── Bibek Enterprises Brand Utility Classes ── */
+.brand-blue { color: #1A3FA4; }
+.brand-orange { color: #F26522; }
+.bg-brand-blue { background-color: #1A3FA4; }
+.bg-brand-orange { background-color: #F26522; }
+.border-brand-blue { border-color: #1A3FA4; }
+.border-brand-orange { border-color: #F26522; }
+
+/* ── Modern Header Enhancement ── */
+.header-modern {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.header-scrolled {
+  box-shadow: 0 4px 24px -4px rgba(26, 63, 164, 0.12), 0 1px 0 rgba(26,63,164,0.06);
+}
+
+/* ── Float contact button — visible on scroll ── */
+.float-contact-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  z-index: 9998;
+  background: #F26522;
+  color: white;
+  border: 3px solid white;
+  border-radius: 50px;
+  padding: 10px 18px 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(242,101,34,0.45), 0 0 0 0 rgba(242,101,34,0.3);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  animation: contactPulse 2.5s ease-in-out infinite;
+}
+.float-contact-btn:hover {
+  background: #d4531a;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 32px rgba(242,101,34,0.5);
+  animation: none;
+}
+@keyframes contactPulse {
+  0%, 100% { box-shadow: 0 6px 24px rgba(242,101,34,0.45), 0 0 0 0 rgba(242,101,34,0.35); }
+  50% { box-shadow: 0 6px 24px rgba(242,101,34,0.45), 0 0 0 10px rgba(242,101,34,0); }
+}
+@media (max-width: 767px) {
+  .float-contact-btn {
+    right: 16px;
+    bottom: 90px;
+    padding: 10px 12px;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    justify-content: center;
+  }
+  .float-contact-label { display: none; }
 }

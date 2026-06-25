@@ -89,7 +89,7 @@ interface ChatBotProps {
   brand?: string;
 }
 
-export default function ChatBot({ phone = "", brand = "#D97706" }: ChatBotProps) {
+export default function ChatBot({ phone = "", brand = "#1A3FA4" }: ChatBotProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -652,7 +652,7 @@ export default function ChatBot({ phone = "", brand = "#D97706" }: ChatBotProps)
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       .replace(/\[(.+?)\]\((.+?)\)/g,
-        '<a href="$2" target="_blank" rel="noopener" style="color:#D97706;text-decoration:underline">$1</a>')
+        '<a href="$2" target="_blank" rel="noopener" style="color:#F26522;text-decoration:underline">$1</a>')
       .replace(/\n/g, "<br/>");
 
   const BLUE = brand;   // brand color — passed from layout
@@ -730,7 +730,7 @@ export default function ChatBot({ phone = "", brand = "#D97706" }: ChatBotProps)
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 9999,
           width: 56, height: 56, borderRadius: "50%",
-          background: open ? "#374151" : BLUE,
+          background: open ? "#1c2240" : "#1A3FA4",
           border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 24px rgba(0,0,0,0.30), 0 0 0 3px rgba(255,255,255,0.9)",
@@ -781,7 +781,7 @@ export default function ChatBot({ phone = "", brand = "#D97706" }: ChatBotProps)
         >
           {/* Header */}
           <div style={{
-            background: `linear-gradient(135deg,${DARK} 0%,${BLUE} 100%)`,
+            background: "linear-gradient(135deg, #090f2a 0%, #1A3FA4 100%)",
             color: "white", padding: "14px 16px",
             display: "flex", alignItems: "center", gap: 10,
           }}>
@@ -969,20 +969,19 @@ export default function ChatBot({ phone = "", brand = "#D97706" }: ChatBotProps)
             border-radius: 16px;
           }
         }
-        /* Call button — mobile only */
-        .float-call-btn { display: none; }
-        @media (max-width: 767px) {
-          .float-call-btn {
-            display: flex;
-            animation: callPulse 2.4s ease-in-out infinite;
-          }
+        /* Call button — ALWAYS visible on all screens */
+        .float-call-btn {
+          display: flex;
+          animation: callPulse 2.4s ease-in-out infinite;
+          background: #F26522 !important;
+          border: 3px solid white !important;
         }
         /* Call ripple rings */
         .call-ring {
           position: absolute;
           inset: 0;
           border-radius: 50%;
-          border: 2.5px solid rgba(34,197,94,0.55);
+          border: 2.5px solid rgba(242,101,34,0.55);
           animation: callRing 2.4s ease-out infinite;
         }
         .call-ring-2 { animation-delay: 0.8s; }
@@ -998,13 +997,11 @@ export default function ChatBot({ phone = "", brand = "#D97706" }: ChatBotProps)
         .call-label { display: none; }
         @media (min-width: 480px) {
           .float-call-btn {
-            display: flex;
             border-radius: 28px;
             width: auto;
             padding: 0 18px 0 14px;
             gap: 8px;
             height: 48px;
-            animation: callPulse 2.4s ease-in-out infinite;
           }
           .call-label {
             display: inline;

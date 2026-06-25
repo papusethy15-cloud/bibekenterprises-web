@@ -29,7 +29,7 @@ export default async function HomePage() {
 
   const siteName    = domain?.name         ?? "Bibek Enterprises";
   const logoUrl     = profile?.logo_url    ?? domain?.logo_url ?? null;
-  const brand       = domain?.primary_color ?? "#D97706";
+  const brand       = domain?.primary_color ?? "#1A3FA4";
   const description = domain?.description  ?? profile?.about_short ?? "Professional home appliance repair and maintenance services.";
   const tagline     = profile?.tagline;
   const phone       = profile?.support_phone || "+91 80000 00000";
@@ -64,7 +64,7 @@ export default async function HomePage() {
           <>
             <div
               aria-hidden
-              className="absolute inset-0 bg-cover bg-right lg:bg-center"
+              className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${bannerUrl})` }}
             />
             <div
@@ -72,7 +72,7 @@ export default async function HomePage() {
               className="absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(90deg,rgba(255,255,255,0.98) 0%,rgba(255,255,255,0.94) 30%,rgba(255,255,255,0.55) 55%,rgba(255,255,255,0.05) 78%,rgba(255,255,255,0) 100%)",
+                  "linear-gradient(90deg,rgba(255,255,255,0.97) 0%,rgba(255,255,255,0.90) 32%,rgba(255,255,255,0.45) 58%,rgba(255,255,255,0.0) 80%,rgba(255,255,255,0) 100%)",
               }}
             />
           </>
@@ -80,7 +80,7 @@ export default async function HomePage() {
           <div
             aria-hidden
             className="absolute inset-0"
-            style={{ background: `linear-gradient(140deg,#0a0a0b 0%,#1c1c21 55%,${brand}22 100%)` }}
+            style={{ background: "linear-gradient(140deg, #090f2a 0%, #1A3FA4 55%, #142d7a 100%)" }}
           />
         )}
 
@@ -89,11 +89,11 @@ export default async function HomePage() {
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
             <div
               className="absolute top-[-80px] right-[5%] w-[420px] h-[420px] rounded-full opacity-[0.08] animate-blob"
-              style={{ background: brand }}
+              style={{ background: "#F26522" }}
             />
             <div
               className="absolute bottom-[-60px] right-[30%] w-[280px] h-[280px] rounded-full opacity-[0.06] animate-blob"
-              style={{ background: brand, animationDelay: "5s" }}
+              style={{ background: "#F26522", animationDelay: "5s" }}
             />
           </div>
         )}
@@ -119,7 +119,7 @@ export default async function HomePage() {
                 {/* Outer glow */}
                 <div
                   className="absolute inset-0 rounded-3xl blur-3xl opacity-20"
-                  style={{ background: brand }}
+                  style={{ background: "#F26522" }}
                 />
 
                 {/* 2×2 appliance icon grid */}
@@ -147,7 +147,7 @@ export default async function HomePage() {
                       {/* Corner accent */}
                       <div
                         className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full opacity-60"
-                        style={{ background: brand }}
+                        style={{ background: "#F26522" }}
                       />
                     </div>
                   ))}
@@ -156,7 +156,7 @@ export default async function HomePage() {
                 {/* Floating "Live" badge */}
                 <div
                   className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full text-white text-xs font-bold shadow-lg animate-float"
-                  style={{ background: brand }}
+                  style={{ background: "#F26522" }}
                 >
                   <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                   Technicians Online Now
@@ -168,26 +168,7 @@ export default async function HomePage() {
         </div>{/* /container */}
       </section>
 
-      {/* ── Stats Bar ── */}
-      <section className="bg-ink-900 text-white py-8 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { value: "10,000+", label: "Happy Customers" },
-              { value: "500+",    label: "Certified Technicians" },
-              { value: "50+",     label: "Cities Covered" },
-              { value: "4.8★",   label: "Average Rating" },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="text-2xl md:text-3xl font-bold" style={{ color: brand }}>
-                  {s.value}
-                </div>
-                <div className="text-sm text-white/50 mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ── Services grid (SSR, SEO-crawlable, category tabs) ── */}
       <ServicesSection services={allVisible} categories={categories} brand={brand} siteName={siteName} />

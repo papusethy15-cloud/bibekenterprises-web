@@ -10,11 +10,11 @@ export default async function BookingPage() {
   const services = data?.services?.filter((s) => s.is_visible) ?? [];
 
   return (
-    <Suspense fallback={<LoadingFallback brand={domain?.primary_color ?? "#D97706"} />}>
+    <Suspense fallback={<LoadingFallback brand={domain?.primary_color ?? "#1A3FA4"} />}>
       <BookingClient
         siteName={domain?.name ?? "Bibek Enterprises"}
         logoUrl={profile?.logo_url ?? domain?.logo_url ?? null}
-        brand={domain?.primary_color ?? "#D97706"}
+        brand={domain?.primary_color ?? "#1A3FA4"}
         phone={profile?.support_phone ?? "+91 80000 00000"}
         services={services}
         domainId={domain?.id ?? ""}

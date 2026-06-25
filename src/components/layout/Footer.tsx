@@ -38,7 +38,7 @@ export default function Footer({
   return (
     <footer id="contact" className="bg-ink-900 text-ink-300">
       {/* ── Top accent bar ── */}
-      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${brand}, ${brand}80, ${brand}20)` }} />
+      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #1A3FA4 0%, #3d5fc4 50%, #F26522 100%)" }} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
@@ -66,7 +66,7 @@ export default function Footer({
                     rel="noopener noreferrer"
                     className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold hover:bg-white/15 hover:border-white/20 transition-all duration-200"
                     aria-label={s.label}
-                    style={{ color: brand }}
+                    style={{ color: "#1A3FA4" }}
                   >
                     {s.label[0]}
                   </a>
@@ -87,7 +87,7 @@ export default function Footer({
                   >
                     <span
                       className="w-1 h-1 rounded-full shrink-0 transition-all duration-200 group-hover:w-2"
-                      style={{ background: brand }}
+                      style={{ background: "#1A3FA4" }}
                     />
                     {s.name}
                   </Link>
@@ -95,7 +95,7 @@ export default function Footer({
               ))}
               {services.length > 6 && (
                 <li>
-                  <Link href="/services" className="text-xs font-semibold hover:text-white transition-colors" style={{ color: brand }}>
+                  <Link href="/services" className="text-xs font-semibold hover:text-white transition-colors" style={{ color: "#1A3FA4" }}>
                     View all services →
                   </Link>
                 </li>
@@ -120,7 +120,7 @@ export default function Footer({
                   <Link href={item.href} className="hover:text-white transition-colors flex items-center gap-1.5 group">
                     <span
                       className="w-1 h-1 rounded-full shrink-0 transition-all duration-200 group-hover:w-2"
-                      style={{ background: brand }}
+                      style={{ background: "#1A3FA4" }}
                     />
                     {item.label}
                   </Link>
@@ -137,7 +137,7 @@ export default function Footer({
                 <a href={phoneHref} className="flex items-center gap-2 hover:text-white transition-colors group">
                   <span
                     className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 transition-all group-hover:scale-110"
-                    style={{ background: `${brand}20` }}
+                    style={{ background: "rgba(26,63,164,0.15)" }}
                   >📞</span>
                   <span>{phone}</span>
                 </a>
@@ -146,7 +146,7 @@ export default function Footer({
                 <a href={`mailto:${email}`} className="flex items-center gap-2 hover:text-white transition-colors group">
                   <span
                     className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 transition-all group-hover:scale-110"
-                    style={{ background: `${brand}20` }}
+                    style={{ background: "rgba(26,63,164,0.15)" }}
                   >✉️</span>
                   <span className="break-all">{email}</span>
                 </a>
@@ -161,7 +161,7 @@ export default function Footer({
                   >
                     <span
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 transition-all group-hover:scale-110"
-                      style={{ background: `${brand}20` }}
+                      style={{ background: "rgba(26,63,164,0.15)" }}
                     >💬</span>
                     <span>WhatsApp</span>
                   </a>
@@ -171,7 +171,7 @@ export default function Footer({
                 <li className="flex items-start gap-2">
                   <span
                     className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 mt-0.5"
-                    style={{ background: `${brand}20` }}
+                    style={{ background: "rgba(26,63,164,0.15)" }}
                   >📍</span>
                   <span className="leading-relaxed">
                     {officeAddress}{officeCity ? `, ${officeCity}` : ""}
@@ -181,7 +181,7 @@ export default function Footer({
               <li className="flex items-center gap-2">
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0"
-                  style={{ background: `${brand}20` }}
+                  style={{ background: "rgba(26,63,164,0.15)" }}
                 >🕐</span>
                 <span>Mon–Sat: 8 AM – 8 PM</span>
               </li>

@@ -180,7 +180,7 @@ export default function InlineBookingPanel({
           {selectedCity ? `Price in ${selectedCity.name}` : "Starting price"}
         </span>
         {!isAvailable && (
-          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+          <span className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
             Unconfirmed city
           </span>
         )}
@@ -420,7 +420,7 @@ export default function InlineBookingPanel({
         )}
 
         {mismatch && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="rounded-xl border border-orange-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
             ⚠️ Your site city is <strong>{selectedCity?.name}</strong> but the booking address is in <strong>{selectedAddr?.city}</strong>. Make sure the address is correct before confirming.
           </div>
         )}

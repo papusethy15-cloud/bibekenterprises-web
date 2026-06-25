@@ -44,7 +44,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   const preSlug     = params.get("service") ?? "";
   // Read ?city= param passed by CityPriceSelector / mobile bar
   const cityParam   = params.get("city") ?? "";
-  const { hydrated, isLoggedIn, customer } = useAuth();
+  const { hydrated, isLoggedIn, customer, syncUserName } = useAuth();
   // Global city context (set when user picks city in header modal)
   const { selectedCity: globalCity } = useCity();
 
@@ -228,6 +228,8 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
       });
       setBookingNo(res.booking_number);
       setBookingId(res.id);
+      // Sync real customer name into auth context so header shows correct name
+      if (customer?.name) syncUserName(customer.name);
       setSubmitted(true);
     } catch (e: any) {
       const msg: string = e?.response?.data?.detail ?? e?.response?.data?.message ?? "";
@@ -251,7 +253,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   if (!hydrated || !isLoggedIn) {
     return (
       <div className="min-h-screen bg-ink-50 flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: `${brand} transparent ${brand} ${brand}` }} />
+        <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: "#1A3FA4 transparent #1A3FA4 #1A3FA4" }} />
       </div>
     );
   }
@@ -265,9 +267,9 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl" style={{ background: `${brand}15` }}>✅</div>
           <h1 className="text-2xl font-bold text-ink-900 mb-2">Booking Confirmed!</h1>
           <p className="text-ink-400 mb-6">Your booking has been received. We'll assign a technician shortly and notify you via SMS & WhatsApp.</p>
-          <div className="rounded-xl p-4 mb-6" style={{ background: `${brand}0d`, border: `1px solid ${brand}30` }}>
+          <div className="rounded-xl p-4 mb-6" style={{ background: "rgba(242,101,34,0.06)", border: "1px solid rgba(242,101,34,0.25)" }}>
             <p className="text-sm text-ink-400 mb-1">Booking Number</p>
-            <p className="text-2xl font-bold" style={{ color: brand }}>{bookingNo}</p>
+            <p className="text-2xl font-bold" style={{ color: "#F26522" }}>{bookingNo}</p>
           </div>
           <div className="text-left space-y-2 text-sm text-ink-600 mb-8 bg-ink-50 rounded-xl p-4">
             {[
@@ -289,7 +291,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
             ))}
           </div>
           <div className="flex gap-3">
-            <Link href="/customer/bookings" className="flex-1 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-center" style={{ background: brand }}>
+            <Link href="/customer/bookings" className="flex-1 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-center" style={{ background: "#1A3FA4" }}>
               View My Bookings
             </Link>
             <Link href="/" className="flex-1 border-2 border-ink-200 text-ink-600 font-semibold py-3 rounded-xl hover:bg-ink-50 transition-colors text-center">
@@ -341,10 +343,10 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
             return (
               <div key={s.label} className="relative z-10 flex flex-col items-center gap-2">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all"
-                  style={{ background: isDone || isActive ? brand : "white", color: isDone || isActive ? "white" : "#9ca3af", border: isDone || isActive ? "none" : "2px solid #e5e7eb", boxShadow: isActive ? `0 0 0 4px ${brand}20` : "none" }}>
+                  style={{ background: isDone || isActive ? "#1A3FA4" : "white", color: isDone || isActive ? "white" : "#9ca3af", border: isDone || isActive ? "none" : "2px solid #e5e7eb", boxShadow: isActive ? "0 0 0 4px rgba(26,63,164,0.2)" : "none" }}>
                   {isDone ? "✓" : s.icon}
                 </div>
-                <span className="text-xs font-medium" style={{ color: isActive ? brand : "#9ca3af" }}>{s.label}</span>
+                <span className="text-xs font-medium" style={{ color: isActive ? "#1A3FA4" : "#9ca3af" }}>{s.label}</span>
               </div>
             );
           })}
@@ -407,8 +409,8 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                         onClick={() => setSelectedServiceId(s.service_id)}
                         className="flex items-center justify-between px-4 py-3 rounded-xl border-2 text-sm text-left transition-all"
                         style={{
-                          borderColor:  selectedServiceId === s.service_id ? brand : "#e5e7eb",
-                          background:   selectedServiceId === s.service_id ? `${brand}08` : "white",
+                          borderColor:  selectedServiceId === s.service_id ? "#1A3FA4" : "#e5e7eb",
+                          background:   selectedServiceId === s.service_id ? "rgba(26,63,164,0.05)" : "white",
                           fontWeight:   selectedServiceId === s.service_id ? 600 : 400,
                         }}
                       >
@@ -470,14 +472,14 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
 
               {loadingAddresses ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: `${brand} transparent ${brand} ${brand}` }} />
+                  <div className="w-6 h-6 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: "#1A3FA4 transparent #1A3FA4 #1A3FA4" }} />
                 </div>
               ) : !showAddrForm ? (
                 <div className="space-y-3">
                   {addresses.map((addr) => (
                     <button key={addr.id} type="button" onClick={() => setSelectedAddressId(addr.id)}
                       className="w-full text-left flex gap-3 items-start p-4 rounded-xl border-2 transition-all"
-                      style={{ borderColor: selectedAddressId === addr.id ? brand : "#e5e7eb", background: selectedAddressId === addr.id ? `${brand}08` : "white" }}>
+                      style={{ borderColor: selectedAddressId === addr.id ? "#1A3FA4" : "#e5e7eb", background: selectedAddressId === addr.id ? "rgba(26,63,164,0.05)" : "white" }}>
                       <span className="text-lg shrink-0">📍</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-ink-900">{addr.label}</p>
@@ -498,7 +500,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                     {["Home", "Work", "Other"].map((l) => (
                       <button key={l} type="button" onClick={() => setAddrForm((f) => ({ ...f, label: l }))}
                         className="py-2 rounded-lg text-sm font-medium border transition-all"
-                        style={{ background: addrForm.label === l ? brand : "white", color: addrForm.label === l ? "white" : "#374151", borderColor: addrForm.label === l ? brand : "#e5e7eb" }}>
+                        style={{ background: addrForm.label === l ? "#1A3FA4" : "white", color: addrForm.label === l ? "white" : "#374151", borderColor: addrForm.label === l ? "#1A3FA4" : "#e5e7eb" }}>
                         {l}
                       </button>
                     ))}
@@ -538,7 +540,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                   {TIME_SLOTS.map((slot) => (
                     <button key={slot} type="button" onClick={() => setTimeSlot(slot)}
                       className="text-sm py-2.5 px-4 rounded-xl border-2 transition-all text-left"
-                      style={{ background: timeSlot === slot ? brand : "white", borderColor: timeSlot === slot ? brand : "#e5e7eb", color: timeSlot === slot ? "white" : "#4b5563", fontWeight: timeSlot === slot ? 600 : 400 }}>
+                      style={{ background: timeSlot === slot ? "#1A3FA4" : "white", borderColor: timeSlot === slot ? "#1A3FA4" : "#e5e7eb", color: timeSlot === slot ? "white" : "#4b5563", fontWeight: timeSlot === slot ? 600 : 400 }}>
                       {slot}
                     </button>
                   ))}
@@ -586,7 +588,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                     onClick={applyCoupon}
                     disabled={couponLoading || !couponInput.trim()}
                     className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
-                    style={{ background: brand }}
+                    style={{ background: "#1A3FA4" }}
                   >
                     {couponLoading ? "…" : "Apply"}
                   </button>
@@ -610,7 +612,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                 </div>
               )}
 
-              <div className="rounded-xl p-4 text-sm" style={{ background: `${brand}0d`, border: `1px solid ${brand}30`, color: brand }}>
+              <div className="rounded-xl p-4 text-sm" style={{ background: "rgba(26,63,164,0.06)", border: "1px solid rgba(26,63,164,0.2)", color: "#1A3FA4" }}>
                 💡 A technician will be assigned within 30 minutes. Final amount is confirmed after inspection.
               </div>
               {error && <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600">{error}</div>}
@@ -629,11 +631,11 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                 onClick={() => { if (canNext[step]) setStep((s) => (s + 1) as Step); }}
                 disabled={!canNext[step]}
                 className="flex-1 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
-                style={{ background: brand }}>
+                style={{ background: "#1A3FA4" }}>
                 Next →
               </button>
             ) : (
-              <button onClick={handleSubmit} disabled={saving} className="flex-1 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: brand }}>
+              <button onClick={handleSubmit} disabled={saving} className="flex-1 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "#F26522", boxShadow: "0 4px 16px rgba(242,101,34,0.4)" }}>
                 {saving ? "Submitting…" : "✅ Confirm Booking"}
               </button>
             )}
@@ -642,7 +644,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
 
         <p className="text-center text-sm text-ink-400 mt-6">
           Need help? Call us at{" "}
-          <a href={`tel:${phone.replace(/\s/g, "")}`} style={{ color: brand }} className="font-medium hover:underline">{phone}</a>
+          <a href={`tel:${phone.replace(/\s/g, "")}`} style={{ color: "#F26522" }} className="font-medium hover:underline">{phone}</a>
         </p>
       </div>
     </div>

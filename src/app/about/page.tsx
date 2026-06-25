@@ -21,7 +21,7 @@ export default async function AboutPage() {
     domain ? getDomainCities(domain.id) : Promise.resolve([]),
   ]);
 
-  const brand        = domain?.primary_color || "#D97706";
+  const brand        = domain?.primary_color || "#1A3FA4";
   const siteName     = domain?.name ?? "Bibek Enterprises";
   const logoUrl      = profile?.logo_url ?? domain?.logo_url ?? null;
   const phone        = profile?.support_phone || "+91 80000 00000";
@@ -81,7 +81,7 @@ export default async function AboutPage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
           <div className="max-w-3xl animate-fade-in-up">
-            <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5" style={{ background: `${brand}15`, color: brand }}>
+            <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5" style={{ background: "#F26522", color: "#fff" }}>
               Our Story
             </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-ink-900 leading-tight mb-6">

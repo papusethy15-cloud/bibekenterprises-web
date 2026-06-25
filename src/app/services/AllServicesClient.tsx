@@ -259,52 +259,103 @@ export default function AllServicesClient({ services, categories, brand, cities,
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-ink-50 to-white">
-      {/* ── Page header ──────────────────────────────────────────────────── */}
+    <div className="min-h-screen bg-white">
+      {/* ── Branded hero / page header ──────────────────────────────────── */}
       <div
         ref={headerRef}
-        className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6"
+        className="relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${brand}0f 0%, ${brand}1c 60%, ${brand}08 100%)`,
+          borderBottom: `1px solid ${brand}22`,
+        }}
       >
-        <nav className={`text-sm text-ink-400 mb-4 transition-all duration-500 ${headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
-          <Link href="/" className="hover:text-ink-700 transition-colors">Home</Link>
-          <span className="mx-2">/</span>
-          <span className="text-ink-700 font-medium">All Services</span>
-        </nav>
-        <div className={`flex items-end justify-between gap-4 transition-all duration-500 delay-100 ${headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-ink-900">All Services</h1>
-            {selectedCity ? (
-              <p className="text-sm text-ink-400 mt-1">
-                Prices for{" "}
-                <button
-                  onClick={openCityModal}
-                  className="font-semibold transition-colors hover:opacity-80 underline underline-offset-2"
-                  style={{ color: brand }}
-                >
-                  {selectedCity.name}
-                </button>
-                {" "}— tap to change city
-              </p>
-            ) : (
-              <p className="text-sm text-ink-400 mt-1">
-                <button onClick={openCityModal} className="underline hover:text-ink-700 transition-colors">
-                  Select your city
-                </button>
-                {" "}to see local pricing
-              </p>
-            )}
-          </div>
-          <span
-            className="text-xs font-bold px-3 py-1.5 rounded-full"
-            style={{ background: `${brand}12`, color: brand }}
+        {/* Decorative blobs */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute -top-24 -right-24 w-80 h-80 rounded-full opacity-[0.07] blur-3xl"
+            style={{ background: brand }}
+          />
+          <div
+            className="absolute bottom-0 -left-16 w-64 h-64 rounded-full opacity-[0.05] blur-2xl"
+            style={{ background: brand }}
+          />
+        </div>
+
+        <div className="relative max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-7">
+          {/* Breadcrumb */}
+          <nav
+            className={`text-xs text-ink-400 mb-5 flex items-center gap-1.5 transition-all duration-500 ${headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
           >
-            {filtered.length} service{filtered.length !== 1 ? "s" : ""}
-          </span>
+            <Link href="/" className="hover:text-ink-700 transition-colors">Home</Link>
+            <span className="text-ink-200">›</span>
+            <span className="font-medium" style={{ color: brand }}>All Services</span>
+          </nav>
+
+          <div
+            className={`flex flex-col sm:flex-row sm:items-end justify-between gap-4 transition-all duration-500 delay-100 ${headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+          >
+            <div>
+              {/* Label chip */}
+              <span
+                className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-3 text-white"
+                style={{ background: "#F26522" }}
+              >
+                🔧 Professional Home Services
+              </span>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-ink-900 leading-tight">
+                All Services
+              </h1>
+              {selectedCity ? (
+                <p className="text-sm text-ink-500 mt-1.5">
+                  Showing prices for{" "}
+                  <button
+                    onClick={openCityModal}
+                    className="font-bold transition-all hover:opacity-80 underline underline-offset-2 decoration-dotted"
+                    style={{ color: brand }}
+                  >
+                    📍 {selectedCity.name}
+                  </button>
+                  <span className="text-ink-300 mx-1.5">·</span>
+                  <button
+                    onClick={openCityModal}
+                    className="text-ink-400 hover:text-ink-700 transition-colors text-xs underline"
+                  >
+                    Change city
+                  </button>
+                </p>
+              ) : (
+                <p className="text-sm text-ink-400 mt-1.5">
+                  <button
+                    onClick={openCityModal}
+                    className="font-semibold underline underline-offset-2 decoration-dotted transition-colors hover:opacity-80"
+                    style={{ color: brand }}
+                  >
+                    📍 Select your city
+                  </button>
+                  {" "}to see accurate local pricing
+                </p>
+              )}
+            </div>
+
+            {/* Service count + trust badges */}
+            <div className="flex flex-col items-start sm:items-end gap-2">
+              <span
+                className="text-sm font-extrabold px-4 py-2 rounded-xl text-white"
+                style={{ background: "#F26522", boxShadow: "0 4px 14px -4px rgba(242,101,34,0.45)" }}
+              >
+                {filtered.length} Service{filtered.length !== 1 ? "s" : ""}
+              </span>
+              <div className="flex items-center gap-3 text-[10px] font-semibold">
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-blue-100 text-blue-800">✅ Verified technicians</span>
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-blue-100 text-blue-800">🛡️ 30-day warranty</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ── Mobile category strip ─────────────────────────────────────────── */}
-      <div className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-ink-100 shadow-sm">
+      <div className="md:hidden sticky top-[73px] z-30 bg-white/95 backdrop-blur-sm border-b border-ink-100 shadow-sm">
         <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
           <button
             onClick={() => setActiveCategory("all")}
@@ -327,11 +378,11 @@ export default function AllServicesClient({ services, categories, brand, cities,
       </div>
 
       {/* ── 3-column layout ──────────────────────────────────────────────── */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-6">
         <div className="flex gap-6 items-start">
 
           {/* ── Col 1: Categories sidebar (desktop, sticky) ── */}
-          <aside className="hidden md:block w-56 flex-shrink-0 sticky top-6">
+          <aside className="hidden md:block w-56 flex-shrink-0 sticky top-[88px]">
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
               <div className="px-4 py-3 text-[11px] font-bold uppercase tracking-widest border-b border-ink-100" style={{ color: brand }}>
                 Categories
@@ -435,7 +486,7 @@ export default function AllServicesClient({ services, categories, brand, cities,
           </main>
 
           {/* ── Col 3: Right panel (sticky, desktop) ── */}
-          <aside id="right-panel" className="hidden lg:block w-72 flex-shrink-0 sticky top-6">
+          <aside id="right-panel" className="hidden lg:block w-72 flex-shrink-0 sticky top-[88px]">
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden min-h-[460px] flex flex-col">
               {/* Panel header */}
               <div
@@ -613,7 +664,7 @@ function ServiceCard({ svc, brand, price, total, gstPercent, isOverride, isAvail
                     {svc.category_name}
                   </span>
                   {!isAvailable && (
-                    <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
                       Unconfirmed city
                     </span>
                   )}

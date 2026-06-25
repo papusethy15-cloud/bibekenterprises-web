@@ -31,7 +31,7 @@ export default function FinalCta({ brand, phone, phoneHref }: Props) {
       <div
         aria-hidden
         className="absolute inset-0"
-        style={{ background: `linear-gradient(135deg, ${brand} 0%, ${brand}cc 35%, #0a0a0b 130%)` }}
+        style={{ background: "linear-gradient(135deg, #1A3FA4 0%, #0e2470 45%, #090f2a 100%)" }}
       />
 
       {/* Faint dot-grid texture for subtle depth/craft */}
@@ -100,7 +100,7 @@ export default function FinalCta({ brand, phone, phoneHref }: Props) {
         >
           <Link
             href="/booking"
-            className="group relative inline-flex items-center justify-center gap-2 bg-ink-900 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+            className="group relative inline-flex items-center justify-center gap-2 text-white font-bold px-8 py-4 rounded-xl text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl" style={{ background: "#F26522", boxShadow: "0 8px 32px rgba(242,101,34,0.4)" }}
           >
             {/* Soft pulsing glow behind the primary button — draws the eye without being a fake countdown/urgency dark pattern */}
             <span

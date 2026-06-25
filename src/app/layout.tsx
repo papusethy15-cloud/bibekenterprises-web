@@ -75,7 +75,7 @@ export default async function RootLayout({
     domain ? getDomainCities(domain.id) : Promise.resolve([]),
     domain ? getDomainServices(domain.id) : Promise.resolve([]),
   ]);
-  const brand = domain?.primary_color ?? "#D97706";
+  const brand = domain?.primary_color ?? "#1A3FA4";
 
   // Header props — same display logic the home page uses, lifted up here
   // so the header (logo, search, contact) is consistent across every page.
@@ -139,7 +139,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#D97706" />
+        <meta name="theme-color" content="#1A3FA4" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

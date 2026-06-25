@@ -68,7 +68,7 @@ export default function ServiceLocations({ cities, brand }: Props) {
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute top-1/3 right-0 w-[26rem] h-[26rem] rounded-full opacity-[0.10] animate-blob"
-          style={{ background: brand }}
+          style={{ background: "#F26522" }}
         />
       </div>
 
@@ -83,7 +83,7 @@ export default function ServiceLocations({ cities, brand }: Props) {
               ref={headerRef}
               className={headerVisible ? "animate-fade-in-up" : "opacity-0"}
             >
-              <span style={{ color: brand }} className="text-sm font-bold uppercase tracking-wider">
+              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: "#F26522" }}>
                 Where We Serve
               </span>
               <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-2 mb-4">
@@ -114,7 +114,7 @@ export default function ServiceLocations({ cities, brand }: Props) {
                     }`}
                     style={{
                       animationDelay: `${(i % 12) * 60}ms`,
-                      borderColor: isSelected ? brand : "rgba(255,255,255,0.14)",
+                      borderColor: isSelected ? "#F26522" : "rgba(255,255,255,0.14)",
                       background: isSelected ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
                       color: isSelected ? "#fff" : "rgba(255,255,255,0.85)",
                       boxShadow: isHovered ? "0 8px 24px -8px rgba(0,0,0,0.45)" : undefined,
@@ -122,7 +122,7 @@ export default function ServiceLocations({ cities, brand }: Props) {
                   >
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover:scale-125"
-                      style={{ background: isSelected ? brand : "rgba(255,255,255,0.35)" }}
+                      style={{ background: isSelected ? "#F26522" : "rgba(255,255,255,0.35)" }}
                     />
                     {city.name}
                     {city.state && (
@@ -148,7 +148,7 @@ export default function ServiceLocations({ cities, brand }: Props) {
 
             {selectedCity && (
               <p className="mt-6 text-sm text-white/50 animate-fade-in-up">
-                <span style={{ color: brand }}>✓</span> Showing service availability for{" "}
+                <span style={{ color: "#F26522" }}>✓</span> Showing service availability for{" "}
                 <span className="text-white font-semibold">{selectedCity.name}</span>
               </p>
             )}

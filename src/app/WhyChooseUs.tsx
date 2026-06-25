@@ -47,11 +47,11 @@ export default function WhyChooseUs({ brand, siteName }: Props) {
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute top-0 left-0 w-[24rem] h-[24rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.05] animate-blob"
-          style={{ background: brand }}
+          style={{ background: "#1A3FA4" }}
         />
         <div
           className="absolute bottom-0 right-0 w-[22rem] h-[22rem] translate-x-1/3 translate-y-1/3 rounded-full opacity-[0.05] animate-blob"
-          style={{ background: brand, animationDelay: "6s" }}
+          style={{ background: "#F26522", animationDelay: "6s" }}
         />
       </div>
 
@@ -60,7 +60,7 @@ export default function WhyChooseUs({ brand, siteName }: Props) {
           ref={headerRef}
           className={`text-center mb-16 ${headerVisible ? "animate-fade-in-up" : "opacity-0"}`}
         >
-          <span style={{ color: brand }} className="text-sm font-bold uppercase tracking-wider">
+          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: "#F26522" }}>
             Our Promise
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-ink-900 mt-2 mb-4">
@@ -87,15 +87,15 @@ export default function WhyChooseUs({ brand, siteName }: Props) {
                 }`}
                 style={{
                   animationDelay: `${i * 110}ms`,
-                  borderColor: isHovered ? `${brand}55` : undefined,
-                  boxShadow: isHovered ? "0 20px 40px -14px rgba(217,119,6,0.25)" : "0 1px 2px rgba(10,10,11,0.04)",
+                  borderColor: isHovered ? "rgba(26,63,164,0.45)" : undefined,
+                  boxShadow: isHovered ? "0 20px 40px -14px rgba(26,63,164,0.22)" : "0 1px 2px rgba(10,10,11,0.04)",
                 }}
               >
                 {/* Oversized faint index numeral — editorial detail in the corner */}
                 <span
                   aria-hidden
                   className="absolute -top-3 -right-1 text-7xl font-black select-none transition-colors duration-300"
-                  style={{ color: isHovered ? `${brand}1a` : "rgba(10,10,11,0.035)" }}
+                  style={{ color: isHovered ? "rgba(26,63,164,0.14)" : "rgba(10,10,11,0.035)" }}
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -104,15 +104,15 @@ export default function WhyChooseUs({ brand, siteName }: Props) {
                 <div
                   aria-hidden
                   className="absolute -top-8 -left-8 w-32 h-32 rounded-full blur-2xl transition-opacity duration-500"
-                  style={{ background: brand, opacity: isHovered ? 0.16 : 0 }}
+                  style={{ background: "#1A3FA4", opacity: isHovered ? 0.14 : 0 }}
                 />
 
                 <div className="relative">
                   <div
                     className="inline-flex items-center justify-center w-14 h-14 rounded-xl text-2xl mb-5 transition-all duration-300 ease-out group-hover:scale-110 group-hover:-rotate-3"
                     style={{
-                      background: isHovered ? brand : `${brand}14`,
-                      boxShadow: isHovered ? "0 10px 24px -8px rgba(217,119,6,0.45)" : undefined,
+                      background: isHovered ? "#1A3FA4" : "rgba(26,63,164,0.10)",
+                      boxShadow: isHovered ? "0 10px 24px -8px rgba(26,63,164,0.45)" : undefined,
                     }}
                   >
                     <span style={{ filter: isHovered ? "grayscale(0) brightness(2)" : undefined }}>
@@ -127,7 +127,7 @@ export default function WhyChooseUs({ brand, siteName }: Props) {
                   <div
                     aria-hidden
                     className="mt-5 h-0.5 rounded-full transition-all duration-500 ease-out"
-                    style={{ background: brand, width: isHovered ? "2.5rem" : "0rem" }}
+                    style={{ background: "#F26522", width: isHovered ? "2.5rem" : "0rem" }}
                   />
                 </div>
               </div>

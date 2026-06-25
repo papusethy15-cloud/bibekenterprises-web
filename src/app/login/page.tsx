@@ -14,11 +14,11 @@ export default async function LoginPage() {
   const profile = data?.profile;
 
   return (
-    <Suspense fallback={<LoginLoadingFallback brand={domain?.primary_color ?? "#D97706"} />}>
+    <Suspense fallback={<LoginLoadingFallback brand={domain?.primary_color ?? "#1A3FA4"} />}>
       <LoginClient
         siteName={domain?.name ?? "Bibek Enterprises"}
         logoUrl={profile?.logo_url ?? domain?.logo_url ?? null}
-        brand={domain?.primary_color ?? "#D97706"}
+        brand={domain?.primary_color ?? "#1A3FA4"}
       />
     </Suspense>
   );

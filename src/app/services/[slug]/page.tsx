@@ -64,7 +64,7 @@ export default async function ServiceDetailPage({ params }: Props) {
     redirect(`/services/${canonicalSlug}`);
   }
 
-  const brand = domain.primary_color || "#D97706";
+  const brand = domain.primary_color || "#1A3FA4";
   const phone = profile?.support_phone || "+91 80000 00000";
   const phoneHref = `tel:${phone.replace(/\s/g, "")}`;
   const whatsapp = profile?.whatsapp_number ?? null;
@@ -203,7 +203,7 @@ export default async function ServiceDetailPage({ params }: Props) {
               {/* Category badge on image */}
               <span
                 className="absolute bottom-3 left-3 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm"
-                style={{ background: `${brand}ee`, color: "#fff" }}
+                style={{ background: "#F26522ee", color: "#fff" }}
               >
                 {icon} {service.category_name}
               </span>
@@ -253,7 +253,7 @@ export default async function ServiceDetailPage({ params }: Props) {
               • self-start prevents the column from stretching to grid height
               • max-h + overflow-y-auto lets it scroll internally if content
                 is taller than the viewport (e.g. long city list) */}
-          <aside className="hidden lg:flex flex-col gap-4 sticky top-6 self-start">
+          <aside className="hidden lg:flex flex-col gap-4 sticky top-[88px] self-start max-h-[calc(100vh-100px)] overflow-y-auto">
 
             {/* ── Pricing card ── */}
             <CityPriceSelector
@@ -355,7 +355,7 @@ export default async function ServiceDetailPage({ params }: Props) {
         </div>
         <a
           href={`/booking?service=${encodeURIComponent(service.name)}`}
-          style={{ background: brand, boxShadow: `0 8px 20px -8px ${brand}80` }}
+          style={{ background: "#F26522", boxShadow: "0 8px 20px -8px rgba(242,101,34,0.55)" }}
           className="shrink-0 text-white font-bold px-7 py-3 rounded-xl hover:opacity-90 hover:-translate-y-0.5 transition-all duration-300"
         >
           Book Now →

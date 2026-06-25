@@ -33,7 +33,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; lab
   IN_PROGRESS: { bg: "bg-orange-50",  text: "text-orange-700",  dot: "bg-orange-500",  label: "Work in Progress" },
   COMPLETED:   { bg: "bg-green-50",   text: "text-green-700",   dot: "bg-green-500",   label: "Completed" },
   CANCELLED:   { bg: "bg-red-50",     text: "text-red-700",     dot: "bg-red-400",     label: "Cancelled" },
-  RESCHEDULED: { bg: "bg-amber-50",   text: "text-amber-700",   dot: "bg-amber-400",   label: "Rescheduled" },
+  RESCHEDULED: { bg: "bg-blue-50",   text: "text-blue-700",   dot: "bg-orange-400",   label: "Rescheduled" },
 };
 
 function StatusBadge({ rawStatus }: { rawStatus: string }) {

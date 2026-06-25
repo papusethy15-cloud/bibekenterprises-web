@@ -24,7 +24,7 @@ export default async function AllServicesPage() {
   if (!data) notFound();
 
   const { domain, profile, services, categories, cities } = data;
-  const brand = domain.primary_color || "#D97706";
+  const brand = domain.primary_color || "#1A3FA4";
   const siteName = domain.name;
   const phone = profile?.support_phone || "+91 80000 00000";
 

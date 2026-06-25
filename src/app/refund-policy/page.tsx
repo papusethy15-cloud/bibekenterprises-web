@@ -15,7 +15,7 @@ export default async function RefundPolicyPage() {
   const domain = await getDomainBySlug();
   const profile = domain ? await getDomainProfile(domain.id) : null;
 
-  const brand     = domain?.primary_color || "#D97706";
+  const brand     = domain?.primary_color || "#1A3FA4";
   const siteName  = domain?.name ?? "Bibek Enterprises";
   const email     = profile?.support_email || `support@${domain?.slug ?? "bibekenterprises"}.com`;
   const phone     = profile?.support_phone || "+91 80000 00000";
@@ -95,7 +95,7 @@ export default async function RefundPolicyPage() {
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full opacity-[0.05] animate-blob" style={{ background: brand }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-          <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5 animate-fade-in-up" style={{ background: `${brand}15`, color: brand }}>
+          <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5 animate-fade-in-up" style={{ background: "#F26522", color: "#fff" }}>
             Our Commitment
           </span>
           <h1 className="text-4xl md:text-5xl font-extrabold text-ink-900 mb-4 animate-fade-in-up" style={{ animationDelay: "80ms" }}>
