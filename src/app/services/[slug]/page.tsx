@@ -253,7 +253,7 @@ export default async function ServiceDetailPage({ params }: Props) {
               • self-start prevents the column from stretching to grid height
               • max-h + overflow-y-auto lets it scroll internally if content
                 is taller than the viewport (e.g. long city list) */}
-          <aside className="hidden lg:flex flex-col gap-4 sticky top-[88px] self-start max-h-[calc(100vh-100px)] overflow-y-auto">
+          <aside className="hidden lg:flex flex-col gap-4 sticky top-[88px] self-start">
 
             {/* ── Pricing card ── */}
             <CityPriceSelector

@@ -13,7 +13,6 @@ interface Props {
   service: DomainService;
   brand: string;
   icon: string;
-  /** Position within the grid — used only to stagger the scroll-reveal timing. */
   index?: number;
 }
 
@@ -23,32 +22,20 @@ export default function ServiceCard({ service, brand, icon, index = 0 }: Props) 
   const [cityPrices, setCityPrices] = useState<ServiceCityPrice[]>([]);
   const { ref, isVisible } = useScrollReveal<HTMLAnchorElement>();
 
-  // Once a city is selected (from localStorage or the picker), fetch this
-  // service's city-wise price overrides and use them instead of base_price.
   useEffect(() => {
-    if (!selectedCity) {
-      setCityPrices([]);
-      return;
-    }
+    if (!selectedCity) { setCityPrices([]); return; }
     let cancelled = false;
     getServiceCityPrices(service.service_id).then((prices) => {
       if (!cancelled) setCityPrices(prices);
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [selectedCity, service.service_id]);
 
   const { price, isOverride, isAvailable } = selectedCity
     ? resolveCityPrice(service.base_price, cityPrices, selectedCity.name)
     : { price: service.base_price, isOverride: false, isAvailable: true };
 
-  // Admin-uploaded, domain-specific override image (Admin Dashboard ->
-  // Domains -> [domain] -> Services -> [service] -> Image). Falls back to
-  // a branded icon panel when the admin hasn't set one yet.
   const image = service.thumbnail_url || service.image_url || null;
-  // Stagger the scroll-reveal by grid column so cards cascade in rather
-  // than popping together — capped low so hover response never feels laggy.
   const revealDelay = (index % 4) * 70;
 
   return (
@@ -61,7 +48,9 @@ export default function ServiceCard({ service, brand, icon, index = 0 }: Props) 
       style={{
         animationDelay: `${revealDelay}ms`,
         borderColor: hovered ? "rgba(26,63,164,0.5)" : "#eeeef0",
-        boxShadow: hovered ? "0 20px 40px -16px rgba(26,63,164,0.3)" : "0 1px 3px 0 rgba(0,0,0,0.04)",
+        boxShadow: hovered
+          ? "0 20px 40px -16px rgba(26,63,164,0.3)"
+          : "0 1px 3px 0 rgba(0,0,0,0.04)",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -84,34 +73,47 @@ export default function ServiceCard({ service, brand, icon, index = 0 }: Props) 
             {icon}
           </div>
         )}
-        {/* Scrim so the badges stay legible over bright photos */}
+
+        {/* Hover scrim */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-        {service.is_featured && (
-          <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full text-white shadow-sm" style={{ background: "#F26522" }}>
-            ⭐ Featured
+        {/* ── Bottom badges row — category left, featured right, no overlap ── */}
+        <div className="absolute bottom-0 inset-x-0 flex items-end justify-between gap-2 px-2.5 pb-2.5">
+          {/* Category chip — icon only on small screens, icon+text on hover/wider */}
+          <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm text-white shadow-sm leading-tight max-w-[65%] truncate">
+            <span className="shrink-0">{icon}</span>
+            <span className="truncate">{service.category_name}</span>
           </span>
-        )}
-        <span className="absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-ink-700 shadow-sm">
-          {icon} {service.category_name}
-        </span>
+
+          {/* Featured badge — only when applicable */}
+          {service.is_featured && (
+            <span
+              className="shrink-0 flex items-center gap-0.5 text-[10px] font-bold px-2 py-1 rounded-lg text-white shadow-sm whitespace-nowrap"
+              style={{ background: "#F26522" }}
+            >
+              ⭐ Featured
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="flex flex-col flex-1 p-5">
+      <div className="flex flex-col flex-1 p-4">
         <h3
-          className="font-bold text-ink-900 mb-1 transition-colors line-clamp-1"
+          className="font-bold text-ink-900 mb-1 transition-colors line-clamp-1 text-[15px]"
           style={{ color: hovered ? "#1A3FA4" : undefined }}
         >
           {service.name}
         </h3>
         {service.description && (
-          <p className="text-sm text-ink-400 mb-4 line-clamp-2 flex-1">{service.description}</p>
+          <p className="text-xs text-ink-400 mb-3 line-clamp-2 flex-1 leading-relaxed">
+            {service.description}
+          </p>
         )}
 
-        <div className="flex items-end justify-between mt-auto pt-1">
+        <div className="flex items-end justify-between mt-auto pt-2 border-t border-ink-50">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-ink-300 font-semibold mb-0.5">
+            <div className="text-[10px] uppercase tracking-wide text-ink-300 font-semibold mb-0.5">
               Starting at
             </div>
             <span className="text-lg font-extrabold" style={{ color: "#1A3FA4" }}>
@@ -119,21 +121,24 @@ export default function ServiceCard({ service, brand, icon, index = 0 }: Props) 
             </span>
           </div>
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5"
-            style={{ background: hovered ? "#1A3FA4" : "rgba(26,63,164,0.10)", color: hovered ? "#fff" : "#1A3FA4" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 group-hover:translate-x-0.5"
+            style={{
+              background: hovered ? "#1A3FA4" : "rgba(26,63,164,0.10)",
+              color: hovered ? "#fff" : "#1A3FA4",
+            }}
           >
             →
           </div>
         </div>
 
         {selectedCity && isOverride && (
-          <div className="mt-2 text-xs font-medium" style={{ color: "#F26522" }}>
+          <div className="mt-1.5 text-[11px] font-semibold" style={{ color: "#F26522" }}>
             ● {selectedCity.name} pricing
           </div>
         )}
         {selectedCity && !isAvailable && (
-          <div className="mt-2 text-xs text-orange-700">
-            Confirm availability in {selectedCity.name} at booking
+          <div className="mt-1.5 text-[11px] text-orange-700">
+            Confirm availability in {selectedCity.name}
           </div>
         )}
       </div>
