@@ -46,6 +46,7 @@ export default function InlineBookingPanel({
   const [step, setStep] = useState<PanelStep>("address");
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState("");
+  const [duplicateBookingNumber, setDuplicateBookingNumber] = useState<string | null>(null);
 
   // Coupon
   const [couponInput,    setCouponInput]    = useState("");
@@ -155,18 +156,20 @@ export default function InlineBookingPanel({
       onBookingDone(bn);
     } catch (e: any) {
       const detail: string = e?.response?.data?.detail || "";
-      // Backend returns "DUPLICATE:BK12345678:IN_PROGRESS" for duplicate bookings
+      // Backend returns "DUPLICATE:BK12345678:STATUS:CategoryName" for category-level duplicate
       if (detail.startsWith("DUPLICATE:")) {
         const parts = detail.split(":");
         const bkNum = parts[1] ?? "";
         const bkStatus = parts[2] ?? "";
-        // Only block if it's a genuinely active booking (not already completed/settled)
-        const completedStatuses = ["COMPLETED", "PAID", "CLOSED", "SETTLED"];
+        const catName = parts[3] ?? "";
+        const completedStatuses = ["COMPLETED", "PAID", "CLOSED", "SETTLED", "REFUND_INITIATED"];
         if (completedStatuses.includes(bkStatus)) {
-          // This shouldn't happen after the backend fix, but handle gracefully
-          setError("Your previous booking for this service is already completed. Proceeding with new booking. Please try again.");
+          // Shouldn't reach here (backend filters completed), but handle gracefully
+          setError("Your previous booking is already completed. Please try again.");
         } else {
-          setError(`You already have an active booking (${bkNum}) for this service at this address. Please wait for it to complete before booking again.`);
+          const categoryMsg = catName ? ` in the ${catName} category` : "";
+          setDuplicateBookingNumber(bkNum);
+          setError(`You already have an active booking (${bkNum})${categoryMsg} at this address. Please complete or cancel it before booking again.`);
         }
       } else {
         setError(e?.response?.data?.message || detail || "Booking failed. Please try again.");
@@ -430,7 +433,21 @@ export default function InlineBookingPanel({
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-sm text-red-600">{error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 space-y-2">
+            <p className="font-semibold leading-snug">{error}</p>
+            {duplicateBookingNumber && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <a
+                  href="/customer/bookings"
+                  className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-red-200 hover:bg-red-50 transition-colors"
+                  style={{ color: "#dc2626" }}
+                >
+                  📋 View Booking {duplicateBookingNumber}
+                </a>
+                <span className="text-xs text-red-500">Cancel it there to book again.</span>
+              </div>
+            )}
+          </div>
         )}
 
         <div className="flex gap-3">
