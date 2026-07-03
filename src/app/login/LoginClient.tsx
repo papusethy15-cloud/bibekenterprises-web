@@ -30,6 +30,15 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
   const [loading,    setLoading]   = useState(false);
   const [error,      setError]     = useState("");
 
+  /* Profile completion modal (shown when name === "New") */
+  const [profileModal, setProfileModal] = useState(false);
+  const [profileName,  setProfileName]  = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [profileSaving,setProfileSaving]= useState(false);
+  const [profileError, setProfileError] = useState("");
+  /* Pending session — held until profile is completed */
+  const [pendingSession, setPendingSession] = useState<{ user: any; customer: any } | null>(null);
+
   /* Already logged in → skip straight to destination */
   useEffect(() => {
     if (isLoggedIn) router.replace(redirect);
@@ -41,6 +50,20 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
     const t = setInterval(() => setResendTick((s) => s - 1), 1000);
     return () => clearInterval(t);
   }, [resendTick]);
+
+
+  /* Dev-mode: auto-fill OTP and trigger verify after a short delay */
+  useEffect(() => {
+    if (!devOtp) return;
+    // Small delay so the OTP step UI renders before we fill + submit
+    const t = setTimeout(() => {
+      setOtp(devOtp);
+      // Pass devOtp directly so we don't depend on stale state
+      handleVerifyOtp(devOtp);
+    }, 400);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devOtp]);
 
   /* ── Step 1: Send OTP ─────────────────────────────────────────────────── */
   const handleSendOtp = async () => {
@@ -65,9 +88,10 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
   };
 
   /* ── Step 2: Verify OTP ───────────────────────────────────────────────── */
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (otpOverride?: string) => {
     setError("");
-    if (otp.replace(/\D/g, "").length !== 6) {
+    const otpValue = (otpOverride ?? otp).replace(/\D/g, "");
+    if (otpValue.length !== 6) {
       setError("Enter the 6-digit OTP.");
       return;
     }
@@ -77,10 +101,19 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
       // verifyOtp now returns { user, customer } with FRESH data — never read
       // from getCachedCustomer() here because clearSession() is called inside
       // verifyOtp before writing, which would return null if read too early.
-      const { user, customer } = await auth.verifyOtp(clean, otp.trim());
+      const { user, customer } = await auth.verifyOtp(clean, otpValue);
 
-      setSession(user, customer);
-      router.replace(redirect);
+      /* If customer name is still the default "New", collect real details first */
+      if (!customer || customer.name?.trim().toLowerCase() === "new") {
+        setPendingSession({ user, customer });
+        setProfileName("");
+        setProfileEmail("");
+        setProfileError("");
+        setProfileModal(true);
+      } else {
+        setSession(user, customer);
+        router.replace(redirect);
+      }
     } catch (e: any) {
       if ((e as any)?.isStaffAccount) {
         setError(
@@ -93,6 +126,30 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  /* ── Profile completion ─────────────────────────────────────────────── */
+  const handleProfileSave = async () => {
+    if (!profileName.trim()) { setProfileError("Please enter your name."); return; }
+    setProfileSaving(true); setProfileError("");
+    try {
+      await auth.updateCustomerProfile({
+        name:  profileName.trim(),
+        email: profileEmail.trim() || undefined,
+      });
+      /* Refresh customer so context has the real name */
+      const fresh = await auth.ensureCustomerProfile();
+      if (pendingSession) {
+        setSession(pendingSession.user, fresh ?? pendingSession.customer);
+      }
+      setProfileModal(false);
+      setPendingSession(null);
+      router.replace(redirect);
+    } catch (e: any) {
+      setProfileError(e?.response?.data?.message ?? "Could not save profile. Please try again.");
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -224,6 +281,76 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
           <Link href="/privacy" className="underline hover:text-ink-700">Privacy Policy</Link>.
         </p>
       </div>
+
+      {/* ── Profile Completion Modal ───────────────────────────────────────── */}
+      {profileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 space-y-6">
+            {/* Header */}
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"
+                style={{ background: `${brand}15` }}>
+                👋
+              </div>
+              <h2 className="text-xl font-bold text-ink-900">Welcome! One last step</h2>
+              <p className="text-sm text-ink-400 mt-1">
+                Tell us your name so we can personalise your experience.
+              </p>
+            </div>
+
+            {/* Fields */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">
+                  Your Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rahul Sharma"
+                  value={profileName}
+                  onChange={e => setProfileName(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleProfileSave()}
+                  className="w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
+                  style={{ "--tw-ring-color": `${brand}40` } as any}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">
+                  Email Address <span className="text-ink-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={profileEmail}
+                  onChange={e => setProfileEmail(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleProfileSave()}
+                  className="w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
+                  style={{ "--tw-ring-color": `${brand}40` } as any}
+                />
+              </div>
+            </div>
+
+            {profileError && (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{profileError}</p>
+            )}
+
+            <button
+              onClick={handleProfileSave}
+              disabled={profileSaving || !profileName.trim()}
+              className="w-full text-white font-semibold py-3 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ background: brand }}
+            >
+              {profileSaving ? "Saving…" : "Continue →"}
+            </button>
+
+            {/* Mobile read-only confirmation */}
+            <p className="text-center text-xs text-ink-400">
+              Logged in as +91 {mobile.replace(/\D/g, "")}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

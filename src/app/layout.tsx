@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { slugify } from "@/lib/slug";
 import ChatBot from "@/components/ui/ChatBot";
 import CallbackModal from "@/components/ui/CallbackModal";
+import NotificationProvider from "@/context/NotificationContext";
 
 /**
  * layout.tsx — Dynamic metadata from Admin Dashboard domain settings.
@@ -136,10 +137,37 @@ export default async function RootLayout({
         : {}),
     });
 
+
+  // ─── JSON-LD: WebSite (enables Google Sitelinks Search Box) ──────────────
+  const websiteSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com"}/#website`,
+    name: domain?.name ?? "Bibek Enterprises",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com",
+    description: domain?.description ?? "Professional home appliance repair and maintenance services.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com"}/services?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: domain?.name ?? "Bibek Enterprises",
+      logo: {
+        "@type": "ImageObject",
+        url: profile?.logo_url ?? domain?.logo_url ?? "",
+      },
+    },
+  });
+
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#1A3FA4" />
+        <meta name="theme-color" content={brand} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -150,13 +178,20 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
+        {/* Razorpay SDK — deferred so it never blocks Googlebot's parse of the page */}
+        <script src="https://checkout.razorpay.com/v1/checkout.js" defer />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: schemaJson }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: websiteSchema }}
+        />
       </head>
       <body className="font-sans antialiased">
         <AuthProvider>
+          <NotificationProvider>
           <CityProvider cities={cities} brand={brand}>
             <Header
               siteName={siteName}
@@ -194,7 +229,9 @@ export default async function RootLayout({
             <ChatBot phone={phone} brand={brand} />
             <CallbackModal brand={brand} siteName={siteName} defaultPhone={phone} />
           </CityProvider>
+          </NotificationProvider>
         </AuthProvider>
+        
       </body>
     </html>
   );

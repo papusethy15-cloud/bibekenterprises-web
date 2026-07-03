@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import BookingTracker from "@/components/BookingTracker";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -221,6 +222,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
         notes:           notes || undefined,
         source:          "WEBSITE",
         domain_id:       domainId || undefined,
+        city_id:         globalCity?.id || undefined,
         coupon_code:     couponCode || undefined,
         coupon_id:       couponId || undefined,
         coupon_discount: couponDiscount > 0 ? couponDiscount : undefined,
@@ -260,6 +262,18 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
 
   /* ── Confirmation screen ──────────────────────────────────────────────── */
   if (submitted) {
+    return (
+      <BookingTracker
+        bookingId={bookingId}
+        bookingNumber={bookingNo}
+        brand={brand}
+        onBack={() => router.push("/customer/bookings")}
+      />
+    );
+  }
+
+  /* ── (original summary kept below for reference — dead code) ─ */
+  if (false && submitted) {
     const addr = addresses.find((a) => a.id === selectedAddressId);
     return (
       <div className="min-h-screen bg-ink-50 flex items-center justify-center px-4">

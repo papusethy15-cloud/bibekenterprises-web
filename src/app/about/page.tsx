@@ -4,12 +4,35 @@ import Image from "next/image";
 import { getDomainBySlug, getDomainProfile, getDomainServices, getDomainCities } from "@/lib/domain";
 import { serviceHref } from "@/lib/slug";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com";
+
 export async function generateMetadata(): Promise<Metadata> {
   const domain = await getDomainBySlug();
+  const profile = domain ? await getDomainProfile(domain.id) : null;
   const siteName = domain?.name ?? "Bibek Enterprises";
+  const title = `About Us | ${siteName}`;
+  const description =
+    profile?.about_short ??
+    `Learn about ${siteName} — our story, mission, and the team behind your trusted home appliance repair service.`;
+  const ogImage = profile?.og_image_url ?? profile?.banner_url ?? profile?.logo_url ?? undefined;
   return {
-    title: `About Us | ${siteName}`,
-    description: `Learn about ${siteName} — our story, mission, and the team behind your trusted home appliance repair service.`,
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/about` },
+    openGraph: {
+      title,
+      description,
+      siteName,
+      type: "website",
+      url: `${SITE_URL}/about`,
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 
@@ -60,8 +83,66 @@ export default async function AboutPage() {
     { name: "Quality Team", role: "QA & Warranty", emoji: "✅", desc: "Every job is reviewed. Our 30-day warranty policy is enforced without question — no hassle." },
   ];
 
+  // ── JSON-LD schemas ────────────────────────────────────────────────────────
+  const localBusinessSchema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${SITE_URL}/#business`,
+    name: siteName,
+    description: aboutShort ?? `Professional home appliance repair and maintenance services by ${siteName}.`,
+    url: SITE_URL,
+    telephone: phone,
+    email,
+    image: logoUrl,
+    logo: logoUrl,
+    priceRange: "₹₹",
+    openingHours: "Mo-Sa 08:00-20:00",
+    ...(address ? {
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: address,
+        addressLocality: city,
+        addressRegion: state,
+        postalCode: pincode,
+        addressCountry: "IN",
+      },
+    } : {}),
+    ...(mapsUrl ? { hasMap: mapsUrl } : {}),
+    areaServed: cities.length > 0 ? cities.map((c) => ({ "@type": "City", name: c.name })) : undefined,
+    sameAs: [
+      profile?.facebook_url,
+      profile?.instagram_url,
+      profile?.twitter_url,
+      profile?.youtube_url,
+      profile?.linkedin_url,
+    ].filter(Boolean),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "About Us", item: `${SITE_URL}/about` },
+    ],
+  };
+
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "@id": `${SITE_URL}/about`,
+    url: `${SITE_URL}/about`,
+    name: `About Us | ${siteName}`,
+    description: aboutShort ?? `Learn about ${siteName} — our story, mission, and team.`,
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    breadcrumb: { "@id": `${SITE_URL}/about#breadcrumb` },
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
       {/* ── Breadcrumb ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <nav className="flex items-center gap-1.5 text-xs text-ink-400 flex-wrap">

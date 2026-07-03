@@ -116,7 +116,9 @@ export default function InlineBookingPanel({
   // ── City mismatch guard ──────────────────────────────────────────────────
   const checkCityMismatch = () => {
     if (!selectedAddr || !selectedCity) return false;
-    return selectedCity.name.toLowerCase() !== selectedAddr.city.toLowerCase();
+    const addrCity = selectedAddr.city ?? "";
+    if (!addrCity) return false;                        // no city stored → skip check
+    return selectedCity.name.toLowerCase() !== addrCity.toLowerCase();
   };
 
   const handleConfirmBooking = async () => {
@@ -141,7 +143,9 @@ export default function InlineBookingPanel({
         scheduled_date: date,
         scheduled_slot: slot,
         notes: notes || undefined,
-        source: "website",
+        source: "WEBSITE",
+        domain_id: domainId || undefined,
+        city_id: selectedCity?.id || undefined,
         coupon_code: couponCode || undefined,
         coupon_id: couponId || undefined,
         coupon_discount: couponDiscount > 0 ? couponDiscount : undefined,
@@ -399,7 +403,7 @@ export default function InlineBookingPanel({
               type="button"
               onClick={applyCoupon}
               disabled={couponLoading || !couponInput.trim()}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 flex-shrink-0 whitespace-nowrap"
               style={{ background: brand }}
             >
               {couponLoading ? "…" : "Apply"}

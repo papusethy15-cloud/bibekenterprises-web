@@ -31,9 +31,28 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   // On mount: hydrate from localStorage (set by a previous login in this
   // browser). No network call here — instant, so the header doesn't flicker.
+  //
+  // IMPORTANT: The JWT-derived user.name comes from the token issued at
+  // registration time and is NEVER refreshed by the token itself — so if the
+  // customer later updates their name via the profile page, the token still
+  // carries the old name (e.g. "New"). We fix this by preferring the
+  // customer_profile cache (which IS updated by ensureCustomerProfile after
+  // every profile save) over the token name whenever they differ.
   useEffect(() => {
-    setUser(auth.getCachedUser());
-    setCustomer(auth.getCachedCustomer());
+    const cachedUser     = auth.getCachedUser();
+    const cachedCustomer = auth.getCachedCustomer();
+
+    if (cachedUser && cachedCustomer?.name && cachedCustomer.name !== cachedUser.name) {
+      // Patch the in-memory user with the real name from the customer profile
+      // and persist it so subsequent mounts don't flicker either.
+      const patched = { ...cachedUser, name: cachedCustomer.name };
+      auth.setCachedUser(patched);
+      setUser(patched);
+    } else {
+      setUser(cachedUser);
+    }
+
+    setCustomer(cachedCustomer);
     setHydrated(true);
   }, []);
 

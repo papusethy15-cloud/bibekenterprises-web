@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getDomainBySlug, getDomainProfile } from "@/lib/domain";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com";
+
 export async function generateMetadata(): Promise<Metadata> {
   const domain = await getDomainBySlug();
   const siteName = domain?.name ?? "Bibek Enterprises";
+  const title = `Refund Policy | ${siteName}`;
+  const description = `${siteName}'s refund and cancellation policy — straightforward, no fine print. Free cancellation 2+ hours before visit.`;
   return {
-    title: `Refund Policy | ${siteName}`,
-    description: `${siteName}'s refund and cancellation policy — straightforward, no fine print.`,
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/refund-policy` },
+    robots: "noindex,follow",
+    openGraph: { title, description, siteName, type: "website", url: `${SITE_URL}/refund-policy` },
   };
 }
 
@@ -79,6 +86,15 @@ export default async function RefundPolicyPage() {
   ];
 
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Refund Policy", item: `${SITE_URL}/refund-policy` },
+        ],
+      }) }} />
     <div className="min-h-screen bg-white">
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -159,5 +175,6 @@ export default async function RefundPolicyPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

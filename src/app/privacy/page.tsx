@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getDomainBySlug, getDomainProfile } from "@/lib/domain";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com";
+
 export async function generateMetadata(): Promise<Metadata> {
   const domain = await getDomainBySlug();
   const siteName = domain?.name ?? "Bibek Enterprises";
+  const title = `Privacy Policy | ${siteName}`;
+  const description = `How ${siteName} collects, uses, and protects your personal information. Read our full privacy policy.`;
   return {
-    title: `Privacy Policy | ${siteName}`,
-    description: `How ${siteName} collects, uses and protects your personal information.`,
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/privacy` },
+    robots: "noindex,follow",
+    openGraph: { title, description, siteName, type: "website", url: `${SITE_URL}/privacy` },
   };
 }
 
@@ -77,18 +84,30 @@ export default async function PrivacyPage() {
     },
   ];
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Privacy Policy", item: `${SITE_URL}/privacy` },
+    ],
+  };
+
   return (
-    <LegalPageShell
-      brand={brand}
-      siteName={siteName}
-      title="Privacy Policy"
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <LegalPageShell
+        brand={brand}
+        siteName={siteName}
+        title="Privacy Policy"
       subtitle={`How ${siteName} collects, uses and protects your personal information.`}
       updated={updated}
       email={email}
       phoneHref={phoneHref}
       phone={phone}
       sections={sections}
-    />
+      />
+    </>
   );
 }
 

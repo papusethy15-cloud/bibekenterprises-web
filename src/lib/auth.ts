@@ -70,7 +70,7 @@ export async function verifyOtp(
     localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token);
   }
 
-  const user: AuthUser = {
+  let user: AuthUser = {
     user_id: data.user_id,
     role: data.role,
     name: data.name,
@@ -84,6 +84,14 @@ export async function verifyOtp(
   try {
     customer = await ensureCustomerProfile();
     setCachedCustomer(customer);
+    // If the customer has already updated their name (e.g. returning user),
+    // the JWT still carries the name from when the token was first issued.
+    // Sync the real name back into the cached user so the header shows it
+    // correctly without requiring a page refresh.
+    if (customer.name && customer.name !== user.name) {
+      user = { ...user, name: customer.name };
+      setCachedUser(user);
+    }
   } catch {
     // Non-fatal — booking/address pages will retry and surface their own error.
   }

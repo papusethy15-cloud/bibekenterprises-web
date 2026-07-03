@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getDomainBySlug, getDomainProfile } from "@/lib/domain";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com";
+
 export async function generateMetadata(): Promise<Metadata> {
   const domain = await getDomainBySlug();
   const siteName = domain?.name ?? "Bibek Enterprises";
+  const title = `Terms of Service | ${siteName}`;
+  const description = `The terms and conditions governing your use of ${siteName}'s platform and services. Please read carefully before booking.`;
   return {
-    title: `Terms of Service | ${siteName}`,
-    description: `The terms and conditions governing your use of ${siteName}'s platform and services.`,
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/terms` },
+    robots: "noindex,follow",
+    openGraph: { title, description, siteName, type: "website", url: `${SITE_URL}/terms` },
   };
 }
 
@@ -82,18 +89,30 @@ export default async function TermsPage() {
     },
   ];
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Terms of Service", item: `${SITE_URL}/terms` },
+    ],
+  };
+
   return (
-    <LegalPageShell
-      brand={brand}
-      siteName={siteName}
-      title="Terms of Service"
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <LegalPageShell
+        brand={brand}
+        siteName={siteName}
+        title="Terms of Service"
       subtitle={`The terms and conditions governing your use of ${siteName}'s platform and services. Please read carefully before booking.`}
       updated={updated}
       email={email}
       phone={phone}
       phoneHref={phoneHref}
       sections={sections}
-    />
+      />
+    </>
   );
 }
 
