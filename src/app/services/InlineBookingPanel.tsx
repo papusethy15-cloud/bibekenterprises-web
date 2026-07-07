@@ -7,14 +7,26 @@ import { resolveCityPrice } from "@/lib/domain";
 import { useCity } from "@/context/CityContext";
 import AddressModal from "./AddressModal";
 
+// Canonical slot values stored in DB — HH:MM-HH:MM (24h)
 const TIME_SLOTS = [
-  "8:00 AM – 10:00 AM",
-  "10:00 AM – 12:00 PM",
-  "12:00 PM – 2:00 PM",
-  "2:00 PM – 4:00 PM",
-  "4:00 PM – 6:00 PM",
-  "6:00 PM – 8:00 PM",
+  { value: '08:00-10:00', label: '8:00 – 10:00 AM'    },
+  { value: '10:00-12:00', label: '10:00 AM – 12:00 PM' },
+  { value: '12:00-14:00', label: '12:00 – 2:00 PM'    },
+  { value: '14:00-16:00', label: '2:00 – 4:00 PM'     },
+  { value: '16:00-18:00', label: '4:00 – 6:00 PM'     },
+  { value: '18:00-20:00', label: '6:00 – 8:00 PM'     },
 ];
+
+function getSlotStartHour(s: string): number {
+  const m = s.match(/^(\d{2}):(\d{2})-/);
+  if (!m) return 0;
+  return parseInt(m[1], 10);
+}
+function isSlotPastForToday(s: string, selectedDate: string): boolean {
+  if (!selectedDate) return false;
+  if (selectedDate !== new Date().toISOString().split("T")[0]) return false;
+  return getSlotStartHour(s) <= new Date().getHours();
+}
 
 interface Props {
   brand: string;
@@ -41,6 +53,11 @@ export default function InlineBookingPanel({
 
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState("");
+
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    if (slot && isSlotPastForToday(slot, newDate)) setSlot("");
+  };
   const [notes, setNotes] = useState("");
 
   const [step, setStep] = useState<PanelStep>("address");
@@ -319,7 +336,7 @@ export default function InlineBookingPanel({
             type="date"
             value={date}
             min={new Date().toISOString().split("T")[0]}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => handleDateChange(e.target.value)}
             className="w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
           />
         </div>
@@ -327,21 +344,29 @@ export default function InlineBookingPanel({
         <div>
           <label className="block text-xs font-semibold text-ink-500 mb-1.5 uppercase tracking-wide">Time Slot</label>
           <div className="grid grid-cols-2 gap-2">
-            {TIME_SLOTS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSlot(s)}
-                className="text-xs py-2.5 px-3 rounded-xl border transition-all text-center"
-                style={
-                  slot === s
-                    ? { background: brand, borderColor: brand, color: "#fff", fontWeight: 600 }
-                    : { borderColor: "#e5e7eb", color: "#4b5563", background: "#fff" }
-                }
-              >
-                {s}
-              </button>
-            ))}
+            {TIME_SLOTS.map((s) => {
+              const isPast = isSlotPastForToday(s.value, date);
+              const isSelected = slot === s.value;
+              return (
+                <button
+                  key={s.value}
+                  type="button"
+                  disabled={isPast}
+                  onClick={() => !isPast && setSlot(s.value)}
+                  className="text-xs py-2.5 px-3 rounded-xl border transition-all text-center"
+                  style={
+                    isPast
+                      ? { borderColor: "#e5e7eb", color: "#9CA3AF", background: "#F3F4F6", cursor: "not-allowed", opacity: 0.6 }
+                      : isSelected
+                      ? { background: brand, borderColor: brand, color: "#fff", fontWeight: 600 }
+                      : { borderColor: "#e5e7eb", color: "#4b5563", background: "#fff" }
+                  }
+                >
+                  {s.label}
+                  {isPast && <span style={{ display: "block", fontSize: "9px", color: "#9CA3AF" }}>Unavailable</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -381,7 +406,7 @@ export default function InlineBookingPanel({
             ["Service", service.name],
             ["Address", `${selectedAddr?.address_line1}, ${selectedAddr?.city} – ${selectedAddr?.pincode}`],
             ["Date", date],
-            ["Slot", slot],
+            ["Slot", TIME_SLOTS.find(x => x.value === slot)?.label || slot],
             ["Customer", customer.name],
           ].map(([l, v]) => (
             <div key={l} className="flex justify-between gap-2">

@@ -242,7 +242,7 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
               {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
               <button
-                onClick={handleVerifyOtp}
+                onClick={() => handleVerifyOtp()}
                 disabled={loading || otp.replace(/\D/g, "").length !== 6}
                 className="w-full text-white font-semibold py-3 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ background: brand }}

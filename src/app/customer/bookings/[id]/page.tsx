@@ -211,6 +211,9 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
   const [quotations, setQuotations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
+  // Map of quotation id → full detail (with services+parts) once fetched
+  const [details, setDetails] = useState<Record<string, any>>({});
+  const [detailLoading, setDetailLoading] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
@@ -218,6 +221,23 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
       .then(setQuotations)
       .finally(() => setLoading(false));
   }, [bookingId]);
+
+  /** Fetch full detail (with line items) for a quotation, lazily on expand */
+  const fetchDetail = async (qId: string) => {
+    if (details[qId] || detailLoading[qId]) return;
+    setDetailLoading(prev => ({ ...prev, [qId]: true }));
+    try {
+      const detail = await customerLib.getQuotationDetails(qId);
+      setDetails(prev => ({ ...prev, [qId]: detail }));
+    } catch { /* silent — summary still visible */ }
+    finally { setDetailLoading(prev => ({ ...prev, [qId]: false })); }
+  };
+
+  const handleToggle = (qId: string) => {
+    const isOpen = expanded === qId;
+    if (!isOpen) fetchDetail(qId);
+    setExpanded(isOpen ? null : qId);
+  };
 
   const act = async (qId: string, action: "approve" | "reject") => {
     setActing(qId + action);
@@ -245,7 +265,6 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
 
   if (!quotations.length) return null;
 
-  // Show the most recent / relevant quotation first
   const sorted = [...quotations].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
@@ -261,6 +280,11 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
           const isOpen = expanded === q.id;
           const qs = Q_STATUS[q.status] ?? { label: q.status, color: "text-gray-500" };
           const awaitingApproval = q.status === "SUBMITTED";
+          const detail = details[q.id];
+          const isLoadingDetail = detailLoading[q.id];
+          const services: any[] = detail?.services ?? [];
+          const parts: any[] = detail?.parts ?? [];
+          const hasItems = services.length > 0 || parts.length > 0;
 
           return (
             <div key={q.id} className="p-5">
@@ -290,36 +314,64 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
               </div>
 
               {/* Toggle line items */}
-              <button onClick={() => setExpanded(isOpen ? null : q.id)}
+              <button onClick={() => handleToggle(q.id)}
                 className="mt-3 text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
-                {isOpen ? "▲ Hide" : "▼ View"} details
+                {isOpen ? "▲ Hide" : "▼ View"} line items
               </button>
 
               {isOpen && (
-                <div className="mt-3 space-y-2">
-                  {(q.services ?? []).length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-ink-500 mb-1">Services</p>
-                      {(q.services ?? []).map((s: any, i: number) => (
-                        <div key={i} className="flex justify-between text-xs py-1 border-b border-ink-50 last:border-0">
-                          <span className="text-ink-700">{s.service_name ?? s.name}</span>
-                          <span className="font-medium text-ink-900">₹{Number(s.total_price ?? s.price ?? 0).toFixed(2)}</span>
+                <div className="mt-3">
+                  {isLoadingDetail ? (
+                    <div className="flex items-center gap-2 text-xs text-ink-400 py-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin border-brand-400" />
+                      Loading items…
+                    </div>
+                  ) : !hasItems ? (
+                    <p className="text-xs text-ink-400 py-2 italic">No line items recorded for this quotation.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {services.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1.5">Services</p>
+                          <div className="border border-ink-100 rounded-xl overflow-hidden">
+                            {services.map((s: any, i: number) => (
+                              <div key={i} className={`flex justify-between items-center text-xs px-3 py-2.5 gap-2 ${i < services.length - 1 ? "border-b border-ink-50" : ""}`}>
+                                <div className="min-w-0">
+                                  <span className="text-ink-800 font-medium">{s.service_name ?? s.name}</span>
+                                  {s.appliance_label && <span className="text-ink-400 ml-1">({s.appliance_label})</span>}
+                                  {s.quantity > 1 && <span className="text-ink-400 ml-1">× {s.quantity}</span>}
+                                  {s.is_repeat_complaint && <span className="ml-1 text-green-600 font-medium">(Warranty)</span>}
+                                </div>
+                                <span className="font-semibold text-ink-900 shrink-0">
+                                  {s.is_repeat_complaint ? "₹0.00" : `₹${Number(s.total_price ?? 0).toFixed(2)}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
+                      )}
+                      {parts.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1.5">Spare Parts</p>
+                          <div className="border border-ink-100 rounded-xl overflow-hidden">
+                            {parts.map((p: any, i: number) => (
+                              <div key={i} className={`flex justify-between items-center text-xs px-3 py-2.5 gap-2 ${i < parts.length - 1 ? "border-b border-ink-50" : ""}`}>
+                                <div className="min-w-0">
+                                  <span className="text-ink-800 font-medium">{p.part_name ?? p.name}</span>
+                                  {p.appliance_label && <span className="text-ink-400 ml-1">({p.appliance_label})</span>}
+                                  {p.quantity > 1 && <span className="text-ink-400 ml-1">× {p.quantity}</span>}
+                                </div>
+                                <span className="font-semibold text-ink-900 shrink-0">₹{Number(p.total_price ?? 0).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {detail?.remarks && (
+                        <p className="text-xs text-ink-400 italic">Remarks: {detail.remarks}</p>
+                      )}
                     </div>
                   )}
-                  {(q.parts ?? []).length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-ink-500 mb-1">Spare Parts</p>
-                      {(q.parts ?? []).map((p: any, i: number) => (
-                        <div key={i} className="flex justify-between text-xs py-1 border-b border-ink-50 last:border-0">
-                          <span className="text-ink-700">{p.part_name ?? p.name} {p.quantity > 1 ? `× ${p.quantity}` : ""}</span>
-                          <span className="font-medium text-ink-900">₹{Number(p.total_price ?? p.price ?? 0).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {q.notes && <p className="text-xs text-ink-400 italic mt-2">Note: {q.notes}</p>}
                 </div>
               )}
 
@@ -355,12 +407,43 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState<string | null>(null);
+  // Full invoice details (with services+parts) keyed by invoice id
+  const [details, setDetails] = useState<Record<string, any>>({});
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     customerLib.getBookingInvoices(bookingId)
-      .then(setInvoices)
+      .then(async (list) => {
+        setInvoices(list);
+        // Eagerly fetch detail for the first (most recent) invoice
+        if (list.length > 0) {
+          const first = list[list.length - 1]; // usually just one
+          fetchDetail(first.id, list);
+        }
+      })
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId]);
+
+  const fetchDetail = async (invId: string, currentList?: any[]) => {
+    const list = currentList ?? invoices;
+    if (details[invId] || detailLoading[invId]) return;
+    setDetailLoading(prev => ({ ...prev, [invId]: true }));
+    try {
+      const detail = await customerLib.getInvoiceDetails(invId);
+      setDetails(prev => ({ ...prev, [invId]: detail }));
+      // Auto-expand first invoice
+      setExpanded(prev => prev === null && list.length > 0 && list[list.length - 1].id === invId ? invId : prev);
+    } catch {}
+    finally { setDetailLoading(prev => ({ ...prev, [invId]: false })); }
+  };
+
+  const handleToggle = (invId: string) => {
+    const isOpen = expanded === invId;
+    if (!isOpen) fetchDetail(invId);
+    setExpanded(isOpen ? null : invId);
+  };
 
   const payOnline = async (invoice: any) => {
     setPaying(invoice.id);
@@ -396,9 +479,12 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
     } finally { setPaying(null); }
   };
 
-  const downloadPdf = async (invoiceId: string) => {
-    const url = await customerLib.downloadInvoicePdf(invoiceId);
-    window.open(url, "_blank");
+  const downloadPdf = async (invoiceId: string, invoiceNumber?: string) => {
+    try {
+      await customerLib.downloadInvoicePdf(invoiceId, invoiceNumber);
+    } catch (e: any) {
+      alert(e?.response?.data?.detail ?? "Could not download invoice PDF.");
+    }
   };
 
   if (loading) return (
@@ -420,6 +506,13 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
         {invoices.map((inv) => {
           const isPaid = inv.payment_status === "PAID";
           const balanceDue = Number(inv.balance_due ?? inv.total_amount ?? 0);
+          const isOpen = expanded === inv.id;
+          const detail = details[inv.id];
+          const isLoadingDetail = detailLoading[inv.id];
+          const services: any[] = detail?.services ?? [];
+          const parts: any[] = detail?.parts ?? [];
+          const hasItems = services.length > 0 || parts.length > 0;
+
           return (
             <div key={inv.id} className="p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
@@ -437,10 +530,11 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
                 </div>
               </div>
 
+              {/* Amount summary */}
               <div className="grid grid-cols-3 gap-2 text-xs text-center">
                 {[
-                  { label: "Subtotal", val: inv.subtotal_amount },
-                  { label: "Tax", val: inv.gst_amount ?? inv.tax_amount },
+                  { label: "Subtotal", val: detail?.subtotal_amount ?? inv.subtotal_amount },
+                  { label: "Tax", val: detail?.tax_amount ?? inv.gst_amount ?? inv.tax_amount },
                   { label: "Discount", val: inv.discount_amount },
                 ].map(({ label, val }) => (
                   <div key={label} className="bg-ink-50 rounded-xl p-2">
@@ -450,8 +544,63 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
                 ))}
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={() => downloadPdf(inv.id)}
+              {/* Toggle line items */}
+              <button onClick={() => handleToggle(inv.id)}
+                className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1">
+                {isOpen ? "▲ Hide" : "▼ View"} line items
+              </button>
+
+              {isOpen && (
+                <div>
+                  {isLoadingDetail ? (
+                    <div className="flex items-center gap-2 text-xs text-ink-400 py-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin border-brand-400" />
+                      Loading items…
+                    </div>
+                  ) : !hasItems ? (
+                    <p className="text-xs text-ink-400 py-2 italic">No line items recorded for this invoice.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {services.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1.5">Services</p>
+                          <div className="border border-ink-100 rounded-xl overflow-hidden">
+                            {services.map((s: any, i: number) => (
+                              <div key={i} className={`flex justify-between items-center text-xs px-3 py-2.5 gap-2 ${i < services.length - 1 ? "border-b border-ink-50" : ""}`}>
+                                <div className="min-w-0">
+                                  <span className="text-ink-800 font-medium">{s.service_name ?? s.name}</span>
+                                  {s.appliance_label && <span className="text-ink-400 ml-1">({s.appliance_label})</span>}
+                                  {(s.quantity ?? 1) > 1 && <span className="text-ink-400 ml-1">× {s.quantity}</span>}
+                                </div>
+                                <span className="font-semibold text-ink-900 shrink-0">₹{Number(s.total_price ?? 0).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {parts.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1.5">Spare Parts</p>
+                          <div className="border border-ink-100 rounded-xl overflow-hidden">
+                            {parts.map((p: any, i: number) => (
+                              <div key={i} className={`flex justify-between items-center text-xs px-3 py-2.5 gap-2 ${i < parts.length - 1 ? "border-b border-ink-50" : ""}`}>
+                                <div className="min-w-0">
+                                  <span className="text-ink-800 font-medium">{p.part_name ?? p.name}</span>
+                                  {(p.quantity ?? 1) > 1 && <span className="text-ink-400 ml-1">× {p.quantity}</span>}
+                                </div>
+                                <span className="font-semibold text-ink-900 shrink-0">₹{Number(p.total_price ?? 0).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => downloadPdf(inv.id, inv.invoice_number)}
                   className="flex-1 py-2.5 rounded-xl border border-ink-200 text-sm font-medium text-ink-600 hover:bg-ink-50 transition-colors flex items-center justify-center gap-1.5">
                   ⬇️ Download PDF
                 </button>

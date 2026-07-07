@@ -138,7 +138,7 @@ export default function Header({ siteName, logoUrl, brand, phone, email, whatsap
                 <button
                   onClick={() => {
                     if (permissionState === "default") requestPermission();
-                    window.location.href = "/customer/bookings";
+                    router.push("/customer/notifications");
                   }}
                   className="relative p-2 rounded-full hover:bg-ink-100 transition-colors"
                   title="Notifications"
@@ -227,6 +227,12 @@ export default function Header({ siteName, logoUrl, brand, phone, email, whatsap
                         {/* Nav items */}
                         <nav className="py-1.5">
                           {[
+                            {
+                              href: "/customer/notifications",
+                              label: "Notifications",
+                              icon: "🔔",
+                              desc: unreadCount > 0 ? `${unreadCount} unread` : "Booking & service alerts",
+                            },
                             {
                               href: "/customer/bookings",
                               label: "My Bookings",

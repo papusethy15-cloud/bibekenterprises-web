@@ -205,6 +205,7 @@ export interface CustomerAddressInput {
   latitude?: number;
   longitude?: number;
   is_default?: boolean;
+  location_source?: string; // 'gps' | 'geocoded' | 'manual'
 }
 
 // ── Booking types ─────────────────────────────────────────────────────────────
@@ -245,6 +246,7 @@ export interface CreateBookingInput {
   appliance_model?: string;
   source?: string;
   domain_id?: string;
+  city_id?: string;
   force_duplicate?: boolean;
   coupon_code?: string;
   coupon_id?: string;

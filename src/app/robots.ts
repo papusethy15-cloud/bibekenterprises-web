@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/customer/",      // customer dashboard, bookings, addresses, profile — private
           "/customer",
+          "/booking",         // booking flow — dynamic, do not index
           "/booking/success", // post-payment confirmation, contains order data
           "/*?*token=*",      // any tokenised/auth deep-links
         ],

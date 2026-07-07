@@ -18,6 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
+    keywords: `about ${siteName}, home appliance repair company, ${siteName} service, trusted appliance repair`,
     alternates: { canonical: `${SITE_URL}/about` },
     openGraph: {
       title,

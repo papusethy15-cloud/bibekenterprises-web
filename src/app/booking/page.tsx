@@ -1,6 +1,24 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { getDomainPageData } from "@/lib/domain";
 import BookingClient from "./BookingClient";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await getDomainPageData();
+  const siteName = data?.domain?.name ?? "Bibek Enterprises";
+  const title = `Book a Service | ${siteName}`;
+  const description = `Book a professional home appliance repair service with ${siteName}. Choose your service, pick a slot, and get a certified technician at your doorstep.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/booking` },
+    robots: "noindex,follow",
+    openGraph: { title, description, siteName, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 export default async function BookingPage() {
   const data = await getDomainPageData();

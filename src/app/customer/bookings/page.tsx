@@ -68,6 +68,7 @@ export default function MyBookingsPage() {
   const [quotations, setQuotations]         = useState<any[]>([]);
   const [invoices, setInvoices]             = useState<any[]>([]);
   const [quotItems, setQuotItems]           = useState<any>(null);
+  const [invItems, setInvItems]             = useState<any>(null);
 
   // Cancel with reason modal
   const [cancelModal, setCancelModal]       = useState<{id:string;bnum:string}|null>(null);
@@ -117,7 +118,7 @@ export default function MyBookingsPage() {
   // ── Open booking detail ────────────────────────────────────────────────────
   const openDetail = async (id: string) => {
     setSelectedId(id); setDetailLoading(true); setDetail(null);
-    setQuotations([]); setInvoices([]); setQuotItems(null);
+    setQuotations([]); setInvoices([]); setQuotItems(null); setInvItems(null);
     setDetailTab("info"); setCouponCode(""); setCouponResult(null); setCouponError("");
     try {
       const [det, quots, invs] = await Promise.all([
@@ -265,7 +266,14 @@ export default function MyBookingsPage() {
 
   // ── Load quotation items ──────────────────────────────────────────────────
   const loadQuotItems = async (quotId: string) => {
-    try { const d = await customerLib.getQuotationItems(quotId); setQuotItems(d); } catch {}
+    try { const d = await customerLib.getQuotationDetails(quotId); setQuotItems(d); } catch {}
+  };
+  const loadInvItems = async (invId: string) => {
+    try { const d = await customerLib.getInvoiceDetails(invId); setInvItems(d); } catch {}
+  };
+  const downloadInvPdf = async (invId: string, invNumber?: string) => {
+    try { await customerLib.downloadInvoicePdf(invId, invNumber); }
+    catch (e: any) { alert(e?.response?.data?.detail ?? "Could not download PDF."); }
   };
 
   const fmt = (n?: number) => n != null ? `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
@@ -387,7 +395,7 @@ export default function MyBookingsPage() {
                 {/* Tabs */}
                 <div className="flex border-b border-ink-100 overflow-x-auto shrink-0">
                   {(["info","quotation","invoice","payment","track"] as const).map(t => (
-                    <button key={t} onClick={() => { setDetailTab(t); if(t==="quotation"&&latestQuot&&!quotItems) loadQuotItems(latestQuot.id); }}
+                    <button key={t} onClick={() => { setDetailTab(t); if(t==="quotation"&&latestQuot&&!quotItems) loadQuotItems(latestQuot.id); if(t==="invoice"&&latestInvoice&&!invItems) loadInvItems(latestInvoice.id); }}
                       className={`shrink-0 px-4 py-3 text-xs font-semibold border-b-2 transition-colors ${detailTab===t?"border-brand-600 text-brand-700":"border-transparent text-ink-500 hover:text-ink-700"}`}>
                       {t==="info"?"Details":t==="quotation"?"Quotation":t==="invoice"?"Invoice":t==="payment"?"Payment":"Track"}
                       {t==="track"&&isEnRoute&&<span className="ml-1 w-2 h-2 rounded-full bg-cyan-500 animate-pulse inline-block"/>}
@@ -505,26 +513,26 @@ export default function MyBookingsPage() {
                             </span>
                           </div>
 
-                          {/* Line items — load when first opened */}
-                          {quotItems && (
+                          {/* Line items — fetched lazily via getQuotationDetails */}
+                          {quotItems?.id === q.id && (
                             <div className="px-4 pt-3 pb-1 space-y-1">
-                              {(quotItems.service_items ?? []).length > 0 && (
+                              {(quotItems.services ?? []).length > 0 && (
                                 <>
                                   <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Services</p>
-                                  {(quotItems.service_items ?? []).map((si: any, i: number) => (
+                                  {(quotItems.services ?? []).map((si: any, i: number) => (
                                     <div key={i} className="flex justify-between text-xs py-1 border-b border-ink-50 last:border-0">
-                                      <span className="text-ink-700 flex-1 pr-2">{si.service_name}{si.quantity > 1 ? ` ×${si.quantity}` : ""}</span>
+                                      <span className="text-ink-700 flex-1 pr-2">{si.service_name ?? si.name}{si.quantity > 1 ? ` ×${si.quantity}` : ""}</span>
                                       <span className="font-medium text-ink-900 shrink-0">{fmt(si.total_price)}</span>
                                     </div>
                                   ))}
                                 </>
                               )}
-                              {(quotItems.part_items ?? []).length > 0 && (
+                              {(quotItems.parts ?? []).length > 0 && (
                                 <>
                                   <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mt-2 mb-1">Parts & Materials</p>
-                                  {(quotItems.part_items ?? []).map((pi: any, i: number) => (
+                                  {(quotItems.parts ?? []).map((pi: any, i: number) => (
                                     <div key={i} className="flex justify-between text-xs py-1 border-b border-ink-50 last:border-0">
-                                      <span className="text-ink-700 flex-1 pr-2">🔩 {pi.part_name}{pi.quantity > 1 ? ` ×${pi.quantity}` : ""}</span>
+                                      <span className="text-ink-700 flex-1 pr-2">🔩 {pi.part_name ?? pi.name}{pi.quantity > 1 ? ` ×${pi.quantity}` : ""}</span>
                                       <span className="font-medium text-ink-900 shrink-0">{fmt(pi.total_price)}</span>
                                     </div>
                                   ))}
@@ -615,6 +623,33 @@ export default function MyBookingsPage() {
                               {inv.status === "PAID" ? "PAID" : inv.balance_amount > 0 ? `Balance: ${fmt(inv.balance_amount)}` : inv.status}
                             </span>
                           </div>
+                          {/* Line items — fetched lazily via getInvoiceDetails */}
+                          {invItems?.id === inv.id && (
+                            <div className="px-4 pt-3 pb-1 space-y-1 border-b border-ink-100">
+                              {(invItems.services ?? []).length > 0 && (
+                                <>
+                                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Services</p>
+                                  {(invItems.services ?? []).map((si: any, i: number) => (
+                                    <div key={i} className="flex justify-between text-xs py-1 border-b border-ink-50 last:border-0">
+                                      <span className="text-ink-700 flex-1 pr-2">{si.service_name ?? si.name}{si.quantity > 1 ? ` ×${si.quantity}` : ""}</span>
+                                      <span className="font-medium text-ink-900 shrink-0">{fmt(si.total_price)}</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                              {(invItems.parts ?? []).length > 0 && (
+                                <>
+                                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mt-2 mb-1">Parts & Materials</p>
+                                  {(invItems.parts ?? []).map((pi: any, i: number) => (
+                                    <div key={i} className="flex justify-between text-xs py-1 border-b border-ink-50 last:border-0">
+                                      <span className="text-ink-700 flex-1 pr-2">🔩 {pi.part_name ?? pi.name}{pi.quantity > 1 ? ` ×${pi.quantity}` : ""}</span>
+                                      <span className="font-medium text-ink-900 shrink-0">{fmt(pi.total_price)}</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          )}
                           <div className="px-4 py-3 grid grid-cols-2 gap-y-2 text-sm">
                             <div><p className="text-xs text-ink-400">Taxable</p><p className="font-semibold">{fmt(inv.taxable_amount)}</p></div>
                             <div><p className="text-xs text-ink-400">GST</p><p className="font-semibold">{fmt(inv.gst_amount)}</p></div>
@@ -622,11 +657,10 @@ export default function MyBookingsPage() {
                           </div>
                           {inv.notes && <div className="px-4 pb-3 text-xs text-ink-500">{inv.notes}</div>}
                           <div className="px-4 pb-4 flex gap-2">
-                            <a href={`${process.env.NEXT_PUBLIC_API_URL}/invoices/${inv.id}/pdf`}
-                              target="_blank" rel="noreferrer"
+                            <button onClick={() => downloadInvPdf(inv.id, inv.invoice_number)}
                               className="flex-1 py-2 border border-ink-200 text-ink-700 rounded-lg text-xs font-semibold text-center hover:bg-ink-50">
                               📥 Download PDF
-                            </a>
+                            </button>
                             {inv.balance_amount > 0 && inv.status !== "PAID" && (
                               <button onClick={() => initiatePayment(inv.id, inv.balance_amount)}
                                 disabled={payLoading}

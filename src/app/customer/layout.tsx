@@ -4,17 +4,20 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
 
 const NAV = [
-  { href: "/customer/bookings",  label: "My Bookings",  icon: "📋" },
-  { href: "/customer/addresses", label: "My Addresses", icon: "📍" },
-  { href: "/customer/profile",   label: "Profile",      icon: "👤" },
+  { href: "/customer/bookings",       label: "My Bookings",    icon: "📋" },
+  { href: "/customer/notifications",  label: "Notifications",  icon: "🔔" },
+  { href: "/customer/addresses",      label: "My Addresses",   icon: "📍" },
+  { href: "/customer/profile",        label: "Profile",        icon: "👤" },
 ];
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
   const { hydrated, isLoggedIn, user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     if (!hydrated) return;
@@ -52,6 +55,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-2">
               {NAV.map((item) => {
                 const active = pathname === item.href;
+                const isNotif = item.href === "/customer/notifications";
                 return (
                   <Link
                     key={item.href}
@@ -61,7 +65,12 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                     }`}
                   >
                     <span>{item.icon}</span>
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {isNotif && unreadCount > 0 && (
+                      <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

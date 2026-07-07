@@ -11,10 +11,30 @@ import * as customerLib from "@/lib/customer";
 import { getDomainPageData, getServiceCityPrices, resolveCityPrice } from "@/lib/domain";
 import { CustomerAddress, DomainService, ServiceCityPrice } from "@/types";
 
+// Canonical slot values stored in DB — HH:MM-HH:MM (24h)
 const TIME_SLOTS = [
-  "8:00 AM – 10:00 AM", "10:00 AM – 12:00 PM", "12:00 PM – 2:00 PM",
-  "2:00 PM – 4:00 PM",  "4:00 PM – 6:00 PM",   "6:00 PM – 8:00 PM",
+  { value: '08:00-10:00', label: '8:00 – 10:00 AM'    },
+  { value: '10:00-12:00', label: '10:00 AM – 12:00 PM' },
+  { value: '12:00-14:00', label: '12:00 – 2:00 PM'    },
+  { value: '14:00-16:00', label: '2:00 – 4:00 PM'     },
+  { value: '16:00-18:00', label: '4:00 – 6:00 PM'     },
+  { value: '18:00-20:00', label: '6:00 – 8:00 PM'     },
 ];
+
+/** Returns the START hour (24h) of a canonical slot value string "HH:MM-HH:MM", e.g. "14:00-16:00" → 14 */
+function getSlotStartHour(slot: string): number {
+  const m = slot.match(/^(\d{2}):(\d{2})-/);
+  if (!m) return 0;
+  return parseInt(m[1], 10);
+}
+
+/** True if this slot's start hour is <= current hour AND the selected date is today */
+function isSlotPastForToday(slot: string, selectedDate: string): boolean {
+  if (!selectedDate) return false;
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (selectedDate !== todayStr) return false;          // future date — all slots valid
+  return getSlotStartHour(slot) <= new Date().getHours(); // slot already started/passed
+}
 
 const INPUT = "w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition";
 
@@ -92,6 +112,14 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   /* Schedule */
   const [date,     setDate]     = useState("");
   const [timeSlot, setTimeSlot] = useState("");
+
+  // When date changes, clear any previously selected slot that is now invalid for today
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    if (timeSlot && isSlotPastForToday(timeSlot, newDate)) {
+      setTimeSlot(""); // clear stale past slot
+    }
+  };
 
   /* Coupon */
   const [couponCode,     setCouponCode]     = useState("");
@@ -295,7 +323,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                 ["Final Amount", `₹${Math.max(resolvedPrice - couponDiscount, 0).toLocaleString("en-IN")}`],
               ] : []),
               ["Date",      date],
-              ["Time",      timeSlot],
+              ["Time",      TIME_SLOTS.find(s => s.value === timeSlot)?.label || timeSlot],
               ["Address",   addr ? `${addr.address_line1}, ${addr.city} – ${addr.pincode}` : "—"],
             ].map(([l, v]) => (
               <div key={l} className="flex justify-between gap-4">
@@ -546,18 +574,40 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
               <h2 className="text-lg font-bold text-ink-900 mb-4">Pick a Date & Time</h2>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1.5">Preferred Date *</label>
-                <input type="date" value={date} min={new Date().toISOString().split("T")[0]} onChange={(e) => setDate(e.target.value)} className={INPUT} />
+                <input type="date" value={date} min={new Date().toISOString().split("T")[0]} onChange={(e) => handleDateChange(e.target.value)} className={INPUT} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-2">Preferred Time Slot *</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {TIME_SLOTS.map((slot) => (
-                    <button key={slot} type="button" onClick={() => setTimeSlot(slot)}
-                      className="text-sm py-2.5 px-4 rounded-xl border-2 transition-all text-left"
-                      style={{ background: timeSlot === slot ? "#1A3FA4" : "white", borderColor: timeSlot === slot ? "#1A3FA4" : "#e5e7eb", color: timeSlot === slot ? "white" : "#4b5563", fontWeight: timeSlot === slot ? 600 : 400 }}>
-                      {slot}
-                    </button>
-                  ))}
+                  {TIME_SLOTS.map((slot) => {
+                    const isPast = isSlotPastForToday(slot.value, date);
+                    const isSelected = timeSlot === slot.value;
+                    return (
+                      <button
+                        key={slot.value}
+                        type="button"
+                        disabled={isPast}
+                        onClick={() => !isPast && setTimeSlot(slot.value)}
+                        className="text-sm py-2.5 px-4 rounded-xl border-2 transition-all text-left"
+                        style={{
+                          background:   isPast ? "#F3F4F6" : isSelected ? "#1A3FA4" : "white",
+                          borderColor:  isPast ? "#E5E7EB" : isSelected ? "#1A3FA4" : "#e5e7eb",
+                          color:        isPast ? "#9CA3AF" : isSelected ? "white" : "#4b5563",
+                          fontWeight:   isSelected && !isPast ? 600 : 400,
+                          cursor:       isPast ? "not-allowed" : "pointer",
+                          opacity:      isPast ? 0.6 : 1,
+                          position:     "relative" as const,
+                        }}
+                      >
+                        {slot.label}
+                        {isPast && (
+                          <span style={{ fontSize: "10px", display: "block", color: "#9CA3AF", marginTop: 1 }}>
+                            Not available
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -578,7 +628,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                   ["Brand/Model", [applianceBrand, applianceModel].filter(Boolean).join(" / ") || "—"],
                   ["Address",   selectedAddr ? `${selectedAddr.address_line1}, ${selectedAddr.city} – ${selectedAddr.pincode}` : "—"],
                   ["Date",      date],
-                  ["Time Slot", timeSlot],
+                  ["Time Slot", TIME_SLOTS.find(s => s.value === timeSlot)?.label || timeSlot],
                 ].map(([l, v]) => (
                   <div key={l} className="flex justify-between gap-4">
                     <span className="text-ink-400 shrink-0">{l}</span>

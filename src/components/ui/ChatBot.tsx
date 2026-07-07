@@ -77,10 +77,10 @@ function parseUserDate(input: string): string {
 }
 
 const TIME_SLOTS = [
-  "9:00 AM – 11:00 AM",
-  "11:00 AM – 1:00 PM",
-  "2:00 PM – 4:00 PM",
-  "4:00 PM – 6:00 PM",
+  { label: "9:00 AM – 11:00 AM",  value: "09:00-11:00" },
+  { label: "11:00 AM – 1:00 PM",  value: "11:00-13:00" },
+  { label: "2:00 PM – 4:00 PM",   value: "14:00-16:00" },
+  { label: "4:00 PM – 6:00 PM",   value: "16:00-18:00" },
 ];
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -200,8 +200,8 @@ export default function ChatBot({ phone = "", brand = "#1A3FA4" }: ChatBotProps)
 
   // ── Ask for time slot ──────────────────────────────────────────────────────
   const askSlot = (date: string) => {
-    const slotLines = TIME_SLOTS.map((s, i) => `${i + 1}. ${s}`).join("\n");
-    addBot(`📅 Date: **${date}**\n\n⏰ Choose a time slot:\n\n${slotLines}`, TIME_SLOTS);
+    const slotLines = TIME_SLOTS.map((s, i) => `${i + 1}. ${s.label}`).join("\n");
+    addBot(`📅 Date: **${date}**\n\n⏰ Choose a time slot:\n\n${slotLines}`, TIME_SLOTS.map(s => s.label));
     setStep("collect_slot");
   };
 
@@ -221,7 +221,7 @@ export default function ChatBot({ phone = "", brand = "#1A3FA4" }: ChatBotProps)
       `🔧 Service: **${draft.service_name || "—"}**\n` +
       `📍 Address: ${draft.address_display || draft.address_label || "—"}\n` +
       `📅 Date: **${draft.scheduled_date || "Tomorrow"}**\n` +
-      `⏰ Slot: **${draft.scheduled_slot || TIME_SLOTS[0]}**\n` +
+      `⏰ Slot: **${TIME_SLOTS.find(s => s.value === (draft.scheduled_slot || TIME_SLOTS[0].value))?.label || draft.scheduled_slot}**\n` +
       (draft.appliance_brand ? `🏷️ Appliance: ${draft.appliance_brand} ${draft.appliance_model || ""}\n` : "") +
       `\nShall I confirm this booking?`;
     addBot(summary, ["✅ Confirm Booking", "❌ Cancel Booking"]);
@@ -239,7 +239,7 @@ export default function ChatBot({ phone = "", brand = "#1A3FA4" }: ChatBotProps)
         address_line: draft.address_display,
         city: draft.city,
         scheduled_date: new Date(draft.scheduled_date || todayPlus(1) + "T10:00:00").toISOString(),
-        scheduled_slot: draft.scheduled_slot || TIME_SLOTS[0],
+        scheduled_slot: draft.scheduled_slot || TIME_SLOTS[0].value,
         appliance_brand: draft.appliance_brand,
         appliance_model: draft.appliance_model,
         source: "WEBSITE",
@@ -478,17 +478,17 @@ export default function ChatBot({ phone = "", brand = "#1A3FA4" }: ChatBotProps)
         const num = parseInt(msg);
         let slot = "";
         if (!isNaN(num) && num >= 1 && num <= TIME_SLOTS.length) {
-          slot = TIME_SLOTS[num - 1];
+          slot = TIME_SLOTS[num - 1].value;
         } else {
-          slot = TIME_SLOTS.find(s => s.toLowerCase().includes(lower.slice(0, 5))) || TIME_SLOTS[0];
+          slot = (TIME_SLOTS.find(s => s.label.toLowerCase().includes(lower.slice(0, 5))) || TIME_SLOTS[0]).value;
           // Also try matching "4:00" or "PM" patterns
-          if (slot === TIME_SLOTS[0] && lower.includes(":")) {
-            slot = TIME_SLOTS.find(s => s.toLowerCase().includes(lower.substring(0, 4))) || TIME_SLOTS[0];
+          if (slot === TIME_SLOTS[0].value && lower.includes(":")) {
+            slot = (TIME_SLOTS.find(s => s.label.toLowerCase().includes(lower.substring(0, 4))) || TIME_SLOTS[0]).value;
           }
-          if (slot === TIME_SLOTS[0] && msg.length > 5) {
+          if (slot === TIME_SLOTS[0].value && msg.length > 5) {
             // direct match
-            const direct = TIME_SLOTS.find(s => s === msg);
-            if (direct) slot = direct;
+            const direct = TIME_SLOTS.find(s => s.label === msg || s.value === msg);
+            if (direct) slot = direct.value;
           }
         }
         setBookingDraft(d => ({ ...d, scheduled_slot: slot }));

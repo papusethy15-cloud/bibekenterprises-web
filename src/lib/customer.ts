@@ -102,8 +102,20 @@ export async function getInvoiceDetails(invoiceId: string): Promise<any> {
   const res = await api.get(`/invoices/${invoiceId}`);
   return res.data?.data;
 }
-export async function downloadInvoicePdf(invoiceId: string): Promise<string> {
-  return `${api.defaults.baseURL}/invoices/${invoiceId}/pdf`;
+export async function downloadInvoicePdf(invoiceId: string, invoiceNumber?: string): Promise<void> {
+  // Fetch with auth header (the endpoint requires authentication)
+  const response = await api.get(`/invoices/${invoiceId}/pdf`, {
+    responseType: "blob",
+  });
+  const blob = new Blob([response.data], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${invoiceNumber ?? invoiceId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 // ── Payments ─────────────────────────────────────────────────────────────────

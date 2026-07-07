@@ -219,6 +219,29 @@ export default async function ServiceDetailPage({ params }: Props) {
     })),
   };
 
+  // ─── JSON-LD: HowTo — when service includes steps (rich result eligible) ─
+  const howToSchema = includes.length >= 3
+    ? {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name: `How ${service.name} works at ${siteName}`,
+        description: `Step-by-step process for ${service.name} by ${siteName}`,
+        step: includes.map((step: string, i: number) => ({
+          "@type": "HowToStep",
+          position: i + 1,
+          name: step,
+          text: step,
+        })),
+        totalTime: `PT${service.duration_mins}M`,
+        estimatedCost: {
+          "@type": "MonetaryAmount",
+          currency: "INR",
+          value: service.base_price,
+        },
+        tool: [{ "@type": "HowToTool", name: "Certified Technician" }],
+      }
+    : null;
+
   // ─── JSON-LD: BreadcrumbList ─────────────────────────────────────────────
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -317,17 +340,48 @@ export default async function ServiceDetailPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webpageSchema) }} />
+      {howToSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
+      )}
 
       {/* ── Breadcrumb ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-        <nav className="flex items-center gap-1.5 text-xs text-ink-400 animate-fade-in-up flex-wrap" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-ink-700 transition-colors">Home</Link>
+        <nav
+          className="flex items-center gap-1.5 text-xs text-ink-400 animate-fade-in-up flex-wrap"
+          aria-label="Breadcrumb"
+          itemScope
+          itemType="https://schema.org/BreadcrumbList"
+        >
+          <span itemScope itemType="https://schema.org/ListItem" itemProp="itemListElement">
+            <Link href="/" className="hover:text-ink-700 transition-colors" itemProp="item">
+              <span itemProp="name">Home</span>
+            </Link>
+            <meta itemProp="position" content="1" />
+          </span>
           <span className="text-ink-200" aria-hidden>›</span>
-          <Link href="/services" className="hover:text-ink-700 transition-colors">All Services</Link>
+          <span itemScope itemType="https://schema.org/ListItem" itemProp="itemListElement">
+            <Link href="/services" className="hover:text-ink-700 transition-colors" itemProp="item">
+              <span itemProp="name">All Services</span>
+            </Link>
+            <meta itemProp="position" content="2" />
+          </span>
           <span className="text-ink-200" aria-hidden>›</span>
-          <Link href="/services" className="hover:text-ink-700 transition-colors">{service.category_name}</Link>
+          <span itemScope itemType="https://schema.org/ListItem" itemProp="itemListElement">
+            <Link href="/services" className="hover:text-ink-700 transition-colors" itemProp="item">
+              <span itemProp="name">{service.category_name}</span>
+            </Link>
+            <meta itemProp="position" content="3" />
+          </span>
           <span className="text-ink-200" aria-hidden>›</span>
-          <span className="text-ink-600 font-medium truncate max-w-[200px]">{service.name}</span>
+          <span
+            className="text-ink-600 font-medium truncate max-w-[200px]"
+            itemScope
+            itemType="https://schema.org/ListItem"
+            itemProp="itemListElement"
+          >
+            <span itemProp="name">{service.name}</span>
+            <meta itemProp="position" content="4" />
+          </span>
         </nav>
       </div>
 

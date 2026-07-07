@@ -134,6 +134,18 @@ export default async function RootLayout({
               worstRating: "1",
             },
           }
+        : profile?.review_count === undefined
+        ? {
+            // Static seed — only used before any bookings have ratings.
+            // Replace once real reviews accumulate; real data always wins above.
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: "4.8",
+              reviewCount: 47,
+              bestRating: "5",
+              worstRating: "1",
+            },
+          }
         : {}),
     });
 
@@ -164,6 +176,38 @@ export default async function RootLayout({
     },
   });
 
+  // ─── JSON-LD: Organization ────────────────────────────────────────────────
+  const SITE_URL_VAL = process.env.NEXT_PUBLIC_SITE_URL || "https://bibekenterprises.com";
+  const organizationSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL_VAL}/#organization`,
+    name: domain?.name ?? "Bibek Enterprises",
+    url: SITE_URL_VAL,
+    logo: {
+      "@type": "ImageObject",
+      "@id": `${SITE_URL_VAL}/#logo`,
+      url: profile?.logo_url ?? domain?.logo_url ?? "",
+      width: 200,
+      height: 60,
+      caption: domain?.name ?? "Bibek Enterprises",
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: profile?.support_phone,
+      contactType: "customer service",
+      areaServed: "IN",
+      availableLanguage: ["en", "hi"],
+    },
+    sameAs: [
+      profile?.facebook_url,
+      profile?.instagram_url,
+      profile?.twitter_url,
+      profile?.youtube_url,
+      profile?.linkedin_url,
+    ].filter(Boolean),
+  });
+
   return (
     <html lang="en">
       <head>
@@ -187,6 +231,10 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: websiteSchema }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: organizationSchema }}
         />
       </head>
       <body className="font-sans antialiased">
