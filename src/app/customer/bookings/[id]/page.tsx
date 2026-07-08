@@ -448,10 +448,18 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
   const payOnline = async (invoice: any) => {
     setPaying(invoice.id);
     try {
-      const rpKey = await customerLib.getRazorpayKey();
+      const order = await customerLib.createPaymentOrder(invoice.id, invoice.balance_due ?? invoice.total_amount);
+      const rpKey = order.razorpay_key_id;
       if (!rpKey) { alert("Online payment is not configured. Please contact support."); return; }
 
-      const order = await customerLib.createPaymentOrder(invoice.id, invoice.balance_due ?? invoice.total_amount);
+      if (!(window as any).Razorpay) {
+        await new Promise<void>((resolve) => {
+          const s = document.createElement("script");
+          s.src = "https://checkout.razorpay.com/v1/checkout.js";
+          s.onload = () => resolve();
+          document.head.appendChild(s);
+        });
+      }
 
       const options: any = {
         key: rpKey,
@@ -459,10 +467,10 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
         currency: order.currency ?? "INR",
         name: "Palei Solutions",
         description: `Invoice ${invoice.invoice_number}`,
-        order_id: order.provider_order_id ?? order.order_id,
+        order_id: order.order_id,
         handler: async (response: any) => {
           try {
-            await customerLib.verifyPayment(order.id, response.razorpay_payment_id, response.razorpay_signature ?? "");
+            await customerLib.verifyPayment(order.transaction_id, response.razorpay_payment_id, response.razorpay_signature ?? "");
             alert("✅ Payment successful! Thank you.");
             const updated = await customerLib.getBookingInvoices(bookingId);
             setInvoices(updated);

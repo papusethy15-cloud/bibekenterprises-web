@@ -222,8 +222,6 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        {/* Razorpay SDK — deferred so it never blocks Googlebot's parse of the page */}
-        <script src="https://checkout.razorpay.com/v1/checkout.js" defer />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: schemaJson }}

@@ -2,6 +2,19 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Standalone output — self-contained bundle for VPS (no node_modules copy needed).
+  // PM2 / systemd starts: node .next/standalone/server.js
+  output: "standalone",
+
+  // Suppress fetch-failed noise during `npm run build` when backend is offline.
+  // Set SKIP_API_DURING_BUILD=true in .env.local for local builds without a running backend.
+  // On VPS the backend is always up before build so this stays unset (default: fetch runs).
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+  },
+
   // Allow external images (logo_url, og_image_url, banner_url — Cloudinary/MinIO/CDN)
   images: {
     remotePatterns: [

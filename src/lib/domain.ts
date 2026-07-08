@@ -40,6 +40,12 @@ const REVALIDATE = 60;
 
 // ── internal fetch helper ─────────────────────────────────────────────────────
 async function apiFetch<T>(path: string, revalidate: number = REVALIDATE): Promise<T | null> {
+  // During local `npm run build` the backend is typically not running.
+  // Skip the fetch silently — pages render with null/empty fallbacks,
+  // which is fine because data is fetched fresh at request time (ISR/SSR).
+  if (process.env.NEXT_PHASE === "phase-production-build" && process.env.SKIP_API_DURING_BUILD === "true") {
+    return null;
+  }
   try {
     const res = await fetch(`${API_URL}${path}`, {
       next: { revalidate },
@@ -48,6 +54,8 @@ async function apiFetch<T>(path: string, revalidate: number = REVALIDATE): Promi
     const json = await res.json();
     return json?.data ?? null;
   } catch {
+    // Backend unreachable at build time — return null, page uses fallback content.
+    // Data will be populated correctly at runtime via ISR.
     return null;
   }
 }

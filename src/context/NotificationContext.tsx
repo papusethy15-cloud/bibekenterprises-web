@@ -15,7 +15,11 @@ interface NotificationContextValue {
 }
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
-const WS_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/^https?/, "wss").replace("/api/v1", "");
+const _API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+const WS_BASE = _API_URL
+  .replace(/^https/, "wss")   // https → wss  (production)
+  .replace(/^http(?!s)/, "ws") // http  → ws   (local dev, no TLS)
+  .replace("/api/v1", "");
 
 export default function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { isLoggedIn, user } = useAuth();

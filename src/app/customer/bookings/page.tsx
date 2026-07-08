@@ -46,7 +46,7 @@ function filterToApiStatus(f: string): string | undefined {
 }
 
 const ACTIVE_FOR_CANCEL = ["PENDING","CONFIRMED","ASSIGNED","ACCEPTED","EN_ROUTE","ARRIVED","INSPECTING","IN_PROGRESS","WORK_PAUSED","RESCHEDULED"];
-const WS_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/^https?/,"wss").replace("/api/v1","");
+const WS_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/^https/, "wss").replace(/^http(?!s)/, "ws").replace("/api/v1", "");
 
 export default function MyBookingsPage() {
   const { isLoggedIn, user } = useAuth();
@@ -241,6 +241,10 @@ export default function MyBookingsPage() {
     try {
       const order = await customerLib.createPaymentOrder(invoiceId);
       const key = order.razorpay_key_id;
+      if (!key) {
+        alert("Online payment is not configured. Please contact support.");
+        return;
+      }
       if (!(window as any).Razorpay) {
         const s = document.createElement("script");
         s.src = "https://checkout.razorpay.com/v1/checkout.js";

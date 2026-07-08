@@ -48,7 +48,7 @@ interface Props {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const API_BASE  = process.env.NEXT_PUBLIC_API_URL ?? "";
-const WS_BASE   = API_BASE.replace(/^https?/, "wss").replace("/api/v1", "");
+const WS_BASE   = API_BASE.replace(/^https/, "wss").replace(/^http(?!s)/, "ws").replace("/api/v1", "");
 
 // ASSIGNED = job offered but technician hasn't accepted yet → stay in WAITING
 // ACCEPTED and beyond = technician confirmed → show ACCEPTED/TRACKING phases
