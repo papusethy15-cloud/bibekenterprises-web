@@ -6,19 +6,20 @@ import { CustomerAddress, CustomerAddressInput, Booking, CreateBookingInput } fr
 import { DOMAIN_ID } from "./config";
 
 // ── Addresses ────────────────────────────────────────────────────────────────
-export async function getAddresses(customerId: string): Promise<CustomerAddress[]> {
-  const res = await api.get(`/customers/${customerId}/addresses`);
+export async function getAddresses(_customerId: string): Promise<CustomerAddress[]> {
+  // Use self-service endpoint so the JWT user_id check is always satisfied
+  const res = await api.get(`/customers/me/addresses`);
   return res.data?.data ?? [];
 }
-export async function addAddress(customerId: string, payload: CustomerAddressInput) {
-  const res = await api.post(`/customers/${customerId}/addresses`, payload);
+export async function addAddress(_customerId: string, payload: CustomerAddressInput) {
+  const res = await api.post(`/customers/me/addresses`, payload);
   return res.data.data;
 }
-export async function updateAddress(customerId: string, addressId: string, payload: CustomerAddressInput) {
-  await api.put(`/customers/${customerId}/addresses/${addressId}`, payload);
+export async function updateAddress(_customerId: string, addressId: string, payload: CustomerAddressInput) {
+  await api.put(`/customers/me/addresses/${addressId}`, payload);
 }
-export async function deleteAddress(customerId: string, addressId: string) {
-  await api.delete(`/customers/${customerId}/addresses/${addressId}`);
+export async function deleteAddress(_customerId: string, addressId: string) {
+  await api.delete(`/customers/me/addresses/${addressId}`);
 }
 export async function geocodeAndUpdateAddresses(customerId: string, addresses: CustomerAddress[]) {
   // For each address missing lat/lng, attempt browser Geolocation or Geocoding API
