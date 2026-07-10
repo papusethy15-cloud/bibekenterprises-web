@@ -81,7 +81,8 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
       setStep("otp");
       setResendTick(30);
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? "Failed to send OTP. Please try again.");
+      const msg = e?.response?.data?.detail ?? e?.response?.data?.message;
+      setError(msg || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
           "Please use the staff portal or contact support."
         );
       } else {
-        const msg = e?.response?.data?.message ?? "";
+        const msg = e?.response?.data?.detail ?? e?.response?.data?.message ?? "";
         setError(msg || "Incorrect OTP. Please try again.");
       }
     } finally {
