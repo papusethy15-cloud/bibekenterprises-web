@@ -1,5 +1,6 @@
 "use client";
 
+import { todayIST, currentHourIST } from "@/lib/tz";
 import { useState, useEffect, useCallback } from "react";
 import { DomainService, CustomerAddress, CustomerProfile, City, ServiceCityPrice } from "@/types";
 import { api } from "@/lib/api";
@@ -24,8 +25,8 @@ function getSlotStartHour(s: string): number {
 }
 function isSlotPastForToday(s: string, selectedDate: string): boolean {
   if (!selectedDate) return false;
-  if (selectedDate !== new Date().toISOString().split("T")[0]) return false;
-  return getSlotStartHour(s) <= new Date().getHours();
+  if (selectedDate !== todayIST()) return false;
+  return getSlotStartHour(s) <= currentHourIST();
 }
 
 interface Props {
@@ -179,10 +180,19 @@ export default function InlineBookingPanel({
         const bkNum = parts[1] ?? "";
         const bkStatus = parts[2] ?? "";
         const catName = parts[3] ?? "";
-        const completedStatuses = ["COMPLETED", "PAID", "CLOSED", "SETTLED", "REFUND_INITIATED"];
+        const completedStatuses = ["COMPLETED", "PAID", "CLOSED", "SETTLED", "REFUND_INITIATED", "CANCELLED"];
         if (completedStatuses.includes(bkStatus)) {
           // Shouldn't reach here (backend filters completed), but handle gracefully
           setError("Your previous booking is already completed. Please try again.");
+        } else if (bkStatus === "INVOICE_GENERATED") {
+          // Invoice is locked — booking is effectively closed for this appliance.
+          // Customer can create a new booking for a different appliance.
+          const catMsg = catName || "this service";
+          setDuplicateBookingNumber(bkNum);
+          setError(
+            `Booking ${bkNum} for ${catMsg} at this address has a locked invoice. ` +
+            `If you need service for a different appliance, please create a new booking.`
+          );
         } else {
           const categoryMsg = catName ? ` in the ${catName} category` : "";
           setDuplicateBookingNumber(bkNum);
@@ -216,6 +226,33 @@ export default function InlineBookingPanel({
       </div>
     </div>
   );
+
+  // ── Profile completeness gate (defence-in-depth) ────────────────────────
+  // AllServicesClient.handleBook already redirects, but guard here too in case
+  // someone lands here via another path (e.g. URL hash redirect after login).
+  const _PLACEHOLDER_NAMES = new Set(["new customer", "new user", "customer", "user"]);
+  const _pName = (customer.name ?? "").trim();
+  const _pMobile = (customer.mobile ?? "").trim();
+  const _profileIncomplete = !_pName || _PLACEHOLDER_NAMES.has(_pName.toLowerCase()) || !_pMobile;
+
+  if (_profileIncomplete) {
+    return (
+      <div className="text-center py-6 space-y-4">
+        <div className="text-4xl">👤</div>
+        <p className="font-bold text-ink-800 text-sm">Complete Your Profile First</p>
+        <p className="text-xs text-ink-500 leading-relaxed">
+          We need your <strong>name</strong> and <strong>mobile number</strong> before you can book.
+        </p>
+        <a
+          href="/customer/profile"
+          className="block w-full text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-center text-sm"
+          style={{ background: brand }}
+        >
+          Update My Profile →
+        </a>
+      </div>
+    );
+  }
 
   // ── Step: Address ────────────────────────────────────────────────────────
   if (step === "address") {
@@ -335,7 +372,7 @@ export default function InlineBookingPanel({
           <input
             type="date"
             value={date}
-            min={new Date().toISOString().split("T")[0]}
+            min={todayIST()}
             onChange={(e) => handleDateChange(e.target.value)}
             className="w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
           />

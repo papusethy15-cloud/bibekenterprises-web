@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CustomerAddress, CustomerAddressInput } from "@/types";
 import { api } from "@/lib/api";
 import * as customerLib from "@/lib/customer";
+import { getCities } from "@/lib/domain";
+import MapPickerModal, { MapPickerResult } from "@/components/MapPickerModal";
 
 interface Props {
   brand: string;
@@ -94,6 +96,12 @@ export default function AddressModal({ brand, customerId, existing, onClose, onS
   const [saving, setSaving] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [cities, setCities] = useState<any[]>([]);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+
+  useEffect(() => {
+    getCities().then(setCities).catch(() => {});
+  }, []);
 
   const update = (k: keyof CustomerAddressInput, v: any) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -113,6 +121,28 @@ export default function AddressModal({ brand, customerId, existing, onClose, onS
       (msg) => setError(msg),
     );
     setGpsLoading(false);
+  };
+
+  const handleMapConfirm = (result: MapPickerResult) => {
+    const matchedCity = cities.find(
+      (c: any) => c.name.toLowerCase() === result.city.toLowerCase()
+    );
+    setForm((f) => ({
+      ...f,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      location_source: "map",
+      address_line1: result.address_line1 || f.address_line1,
+      address_line2: result.address_line2 || f.address_line2,
+      city: matchedCity ? matchedCity.name : (result.city || f.city),
+      state: matchedCity ? (matchedCity.state ?? result.state) : (result.state || f.state),
+      pincode: result.pincode || f.pincode,
+    }));
+    if (!matchedCity && result.city) {
+      setError(`Note: '${result.city}' is not a serviced city. Please select from the city list.`);
+    } else {
+      setError("");
+    }
   };
 
   const handleSave = async () => {
@@ -191,19 +221,28 @@ export default function AddressModal({ brand, customerId, existing, onClose, onS
             </div>
           </div>
 
-          {/* GPS Button */}
-          <button
-            type="button"
-            onClick={handleDetectGPS}
-            disabled={gpsLoading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 transition-colors"
-          >
-            {gpsLoading ? (
-              <><span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin border-white" />Detecting location…</>
-            ) : (
-              <>📍 Use My Current Location (GPS)</>
-            )}
-          </button>
+          {/* Location: GPS + Map picker */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleDetectGPS}
+              disabled={gpsLoading}
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+            >
+              {gpsLoading ? (
+                <><span className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin border-white" />Detecting…</>
+              ) : (
+                <>📍 Use GPS</>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMapPicker(true)}
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
+            >
+              🗺️ Pick on Map
+            </button>
+          </div>
 
           {/* GPS status */}
           {form.latitude && form.longitude ? (
@@ -247,15 +286,32 @@ export default function AddressModal({ brand, customerId, existing, onClose, onS
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-1">
               <label className="block text-xs font-semibold text-ink-500 mb-1 uppercase tracking-wide">City *</label>
-              <input className={INPUT} placeholder="City" value={form.city} onChange={(e) => update("city", e.target.value)} />
+              {cities.length > 0 ? (
+                <select
+                  value={form.city}
+                  onChange={(e) => {
+                    const c = cities.find((c: any) => c.name === e.target.value);
+                    update("city", e.target.value);
+                    if (c) update("state", c.state ?? "");
+                  }}
+                  className={INPUT}
+                >
+                  <option value="">Select city</option>
+                  {cities.map((c: any) => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input className={INPUT} placeholder="City" value={form.city} onChange={(e) => update("city", e.target.value)} />
+              )}
             </div>
             <div className="col-span-1">
               <label className="block text-xs font-semibold text-ink-500 mb-1 uppercase tracking-wide">State</label>
-              <input className={INPUT} placeholder="State" value={form.state} onChange={(e) => update("state", e.target.value)} />
+              <input className={INPUT} placeholder="State" value={form.state} onChange={(e) => update("state", e.target.value)} readOnly={!!form.city && cities.some((c: any) => c.name === form.city)} />
             </div>
             <div className="col-span-1">
               <label className="block text-xs font-semibold text-ink-500 mb-1 uppercase tracking-wide">Pincode *</label>
-              <input className={INPUT} placeholder="Pincode" value={form.pincode} onChange={(e) => update("pincode", e.target.value)} maxLength={6} />
+              <input className={INPUT} placeholder="Pincode" value={form.pincode} onChange={(e) => update("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} />
             </div>
           </div>
 
@@ -281,6 +337,14 @@ export default function AddressModal({ brand, customerId, existing, onClose, onS
           </button>
         </div>
       </div>
+      <MapPickerModal
+        open={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={handleMapConfirm}
+        initialLat={form.latitude}
+        initialLng={form.longitude}
+        servicedCities={cities.map((c: any) => c.name)}
+      />
     </div>
   );
 }

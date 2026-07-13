@@ -1,3 +1,4 @@
+import { todayIST } from "@/lib/tz";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDomainPageData, DomainPageData } from "@/lib/domain";
@@ -100,7 +101,7 @@ export default async function HomePage() {
     url: SITE_URL,
     isPartOf: { "@id": `${SITE_URL}/#website` },
     about: { "@id": `${SITE_URL}/#business` },
-    datePublished: new Date().toISOString().split("T")[0],
+    datePublished: todayIST(),
     inLanguage: "en-IN",
   };
 

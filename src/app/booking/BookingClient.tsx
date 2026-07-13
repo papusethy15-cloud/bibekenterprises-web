@@ -1,5 +1,6 @@
 "use client";
 
+import { todayIST, currentHourIST, bookingDateISO } from "@/lib/tz";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import BookingTracker from "@/components/BookingTracker";
 import Link from "next/link";
@@ -31,9 +32,9 @@ function getSlotStartHour(slot: string): number {
 /** True if this slot's start hour is <= current hour AND the selected date is today */
 function isSlotPastForToday(slot: string, selectedDate: string): boolean {
   if (!selectedDate) return false;
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = todayIST();
   if (selectedDate !== todayStr) return false;          // future date — all slots valid
-  return getSlotStartHour(slot) <= new Date().getHours(); // slot already started/passed
+  return getSlotStartHour(slot) <= currentHourIST(); // slot already started/passed (IST)
 }
 
 const INPUT = "w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition";
@@ -65,7 +66,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   const preSlug     = params.get("service") ?? "";
   // Read ?city= param passed by CityPriceSelector / mobile bar
   const cityParam   = params.get("city") ?? "";
-  const { hydrated, isLoggedIn, customer, syncUserName } = useAuth();
+  const { hydrated, isLoggedIn, customer, syncUserName, refreshCustomer } = useAuth();
   // Global city context (set when user picks city in header modal)
   const { selectedCity: globalCity } = useCity();
 
@@ -89,6 +90,44 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   const [saving,        setSaving]        = useState(false);
   const [error,         setError]         = useState("");
 
+  /* ── Profile gate ─────────────────────────────────────────────────────────
+   * If name is missing / placeholder, or mobile is not set, we show an inline
+   * profile-update form before letting the customer book anything.
+   * Placeholder names from OTP registration: "New User", "New Customer", ""
+   */
+  const [profileName,   setProfileName]   = useState("");
+  const [profileEmail,  setProfileEmail]  = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError,  setProfileError]  = useState("");
+  const [profileSaved,  setProfileSaved]  = useState(false);
+
+  // Track if we have already pre-filled the profile form from customer data
+  const [profilePrefilled, setProfilePrefilled] = useState(false);
+  useEffect(() => {
+    if (customer && !profilePrefilled) {
+      setProfileName((customer.name ?? ""));
+      setProfileEmail(customer.email ?? "");
+      setProfilePrefilled(true);
+    }
+  }, [customer, profilePrefilled]);
+
+  const handleSaveProfile = async () => {
+    const trimmed = profileName.trim();
+    if (!trimmed || trimmed.length < 2) {
+      setProfileError("Please enter your full name (at least 2 characters).");
+      return;
+    }
+    setSavingProfile(true); setProfileError("");
+    try {
+      await import("@/lib/auth").then(m => m.updateCustomerProfile({ name: trimmed, email: profileEmail.trim() || undefined }));
+      await refreshCustomer();
+      syncUserName(trimmed);
+      setProfileSaved(true);
+    } catch (e: any) {
+      setProfileError(e?.response?.data?.message ?? "Could not save profile. Please try again.");
+    } finally { setSavingProfile(false); }
+  };
+
   /* Service selection */
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [serviceSearch,     setServiceSearch]     = useState("");
@@ -109,6 +148,11 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   const [savingAddr,        setSavingAddr]        = useState(false);
   const [addrError,         setAddrError]         = useState("");
 
+  /* Appliance */
+  const [myAppliances,    setMyAppliances]    = useState<any[]>([]);
+  const [selectedApplId,  setSelectedApplId]  = useState("");
+  const [addingNewAppl,   setAddingNewAppl]   = useState(false);
+
   /* Schedule */
   const [date,     setDate]     = useState("");
   const [timeSlot, setTimeSlot] = useState("");
@@ -120,6 +164,8 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
       setTimeSlot(""); // clear stale past slot
     }
   };
+
+  const PLACEHOLDER_NAMES = new Set(["new customer", "new user", "customer", "user"]);
 
   /* Coupon */
   const [couponCode,     setCouponCode]     = useState("");
@@ -159,7 +205,9 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
       .then(setCityPrices)
       .catch(() => setCityPrices([]))
       .finally(() => setLoadingPrice(false));
-  }, [selectedServiceId]);
+    // Load domain cities for address form city dropdown
+    if (domainId) getDomainCities(domainId).then(setCities).catch(() => {});
+  }, [selectedServiceId, domainId]);
 
   /* ── Resolved price for the selected service + active city ──────────── */
   const { price: resolvedPrice } = useMemo(
@@ -182,6 +230,14 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   }, [customer?.id]);
 
   useEffect(() => { loadAddresses(); }, [loadAddresses]);
+
+  /* ── Load customer appliances once customer is known ─────────────────── */
+  useEffect(() => {
+    if (!customer?.id) return;
+    customerLib.getMyAppliances()
+      .then(list => setMyAppliances(list))
+      .catch(() => setMyAppliances([]));
+  }, [customer?.id]);
 
   /* ── Save new address ──────────────────────────────────────────────────── */
   const handleSaveAddress = async () => {
@@ -235,6 +291,18 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
 
   /* ── Submit booking ─────────────────────────────────────────────────────── */
   const handleSubmit = async () => {
+    // Validate customer profile completeness before submitting
+    // (The profile gate above will normally prevent reaching this, but defence-in-depth.)
+    const _submitName = (customer?.name ?? "").trim();
+    const _submitMobile = (customer?.mobile ?? "").trim();
+    if (!_submitName || PLACEHOLDER_NAMES.has(_submitName.toLowerCase())) {
+      setError("Please complete your profile (full name is required) before booking.");
+      return;
+    }
+    if (!_submitMobile) {
+      setError("Your profile is missing a mobile number. Please contact support.");
+      return;
+    }
     if (!selectedServiceId) { setError("Please select a service."); return; }
     if (!selectedAddressId) { setError("Please add a service address."); return; }
     if (!date || !timeSlot) { setError("Please pick a date and time slot."); return; }
@@ -243,14 +311,16 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
       const res = await customerLib.createBooking({
         service_id:      selectedServiceId,
         address_id:      selectedAddressId,
-        scheduled_date:  new Date(`${date}T00:00:00`).toISOString(),
+        scheduled_date:  bookingDateISO(date),
         scheduled_slot:  timeSlot,
         appliance_brand: applianceBrand || undefined,
         appliance_model: applianceModel || undefined,
+        appliance_id:    selectedApplId || undefined,
         notes:           notes || undefined,
         source:          "WEBSITE",
         domain_id:       domainId || undefined,
         city_id:         globalCity?.id || undefined,
+        city:            globalCity?.name || activeCityName || undefined,
         coupon_code:     couponCode || undefined,
         coupon_id:       couponId || undefined,
         coupon_discount: couponDiscount > 0 ? couponDiscount : undefined,
@@ -263,15 +333,36 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
       setSubmitted(true);
     } catch (e: any) {
       const msg: string = e?.response?.data?.detail ?? e?.response?.data?.message ?? "";
-      if (msg.startsWith("DUPLICATE:")) {
+      if (msg.startsWith("INCOMPLETE_PROFILE:")) {
+        // Backend profile completeness gate fired (shouldn't normally happen since
+        // the frontend gate above catches it, but keep as defence-in-depth).
+        const field = msg.split(":")[1] ?? "";
+        if (field === "name") {
+          setError("Please update your name in your profile before booking.");
+        } else if (field === "mobile") {
+          setError("Please add your mobile number in your profile before booking.");
+        } else {
+          setError("Please complete your profile before booking.");
+        }
+      } else if (msg.startsWith("DUPLICATE:")) {
         const parts = msg.split(":");
         const bkNum = parts[1] ?? "";
         const bkStatus = parts[2] ?? "";
-        const completedStatuses = ["COMPLETED", "PAID", "CLOSED", "SETTLED"];
-        if (completedStatuses.includes(bkStatus)) {
-          setError("Your previous booking for this service is already completed. Please try again.");
+        const catName = parts[3] ?? "";
+        // Statuses where the booking is effectively over and customer can re-book freely
+        const closedStatuses = ["COMPLETED", "PAID", "CLOSED", "SETTLED", "CANCELLED", "REFUND_INITIATED"];
+        if (closedStatuses.includes(bkStatus)) {
+          setError("Your previous booking for this service at this address is now complete. Please try again.");
+        } else if (bkStatus === "INVOICE_GENERATED") {
+          setError(
+            `Booking ${bkNum} for ${catName || "this service"} at this address has a locked invoice. ` +
+            `If you need service for a different appliance, please create a new booking.`
+          );
         } else {
-          setError(`You already have an active booking (${bkNum}) for this service at this address. Please wait for it to complete before booking again.`);
+          setError(
+            `You already have an active booking (${bkNum}) for ${catName || "this service"} at this address. ` +
+            `Please wait for it to complete or cancel it before booking again.`
+          );
         }
       } else {
         setError(msg || "Could not create booking. Please try again.");
@@ -288,6 +379,57 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
     );
   }
 
+  /* ── Profile completeness gate ────────────────────────────────────────────── */
+  // Computed every render — if name is placeholder or mobile missing, show the gate.
+  const _cName = (customer?.name ?? "").trim();
+  const _cMobile = (customer?.mobile ?? "").trim();
+  const isProfileIncomplete =
+    hydrated && isLoggedIn &&
+    (!_cName || PLACEHOLDER_NAMES.has(_cName.toLowerCase()) || !_cMobile);
+
+  if (isProfileIncomplete) {
+    return (
+      <div className="min-h-screen bg-ink-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl"
+            style={{ background: "rgba(242,101,34,0.1)" }}>👤</div>
+          <h2 className="text-xl font-bold text-ink-900 mb-2">Complete Your Profile</h2>
+          <p className="text-ink-500 text-sm mb-6">
+            We need your <strong>name</strong> and <strong>mobile number</strong> before you can book a service.
+            This helps our technicians contact you.
+          </p>
+          <div className="text-left space-y-3 mb-6">
+            {(!_cName || PLACEHOLDER_NAMES.has(_cName.toLowerCase())) && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+                <span className="text-lg">✏️</span>
+                <span>Name is missing or not yet set</span>
+              </div>
+            )}
+            {!_cMobile && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+                <span className="text-lg">📱</span>
+                <span>Mobile number is missing</span>
+              </div>
+            )}
+          </div>
+          <a
+            href="/customer/profile"
+            className="block w-full text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-center"
+            style={{ background: "#F26522" }}
+          >
+            Update My Profile →
+          </a>
+          <button
+            onClick={() => window.history.back()}
+            className="mt-3 w-full border-2 border-ink-200 text-ink-600 font-medium py-3 rounded-xl hover:bg-ink-50 transition-colors"
+          >
+            ← Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   /* ── Confirmation screen ──────────────────────────────────────────────── */
   if (submitted) {
     return (
@@ -299,6 +441,8 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
       />
     );
   }
+
+  /* Profile gate already handled above (isProfileIncomplete boolean gate) */
 
   /* ── (original summary kept below for reference — dead code) ─ */
   if (false && submitted) {
@@ -483,16 +627,91 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div>
-                  <label className="block text-xs font-medium text-ink-500 mb-1">Appliance Brand <span className="text-ink-300">(optional)</span></label>
-                  <input type="text" placeholder="e.g. Samsung, LG" value={applianceBrand} onChange={(e) => setApplianceBrand(e.target.value)} className={INPUT} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-ink-500 mb-1">Model <span className="text-ink-300">(optional)</span></label>
-                  <input type="text" placeholder="e.g. AC 1.5 Ton" value={applianceModel} onChange={(e) => setApplianceModel(e.target.value)} className={INPUT} />
-                </div>
-              </div>
+              {/* ── Appliance Picker ─────────────────────────────────── */}
+              {(() => {
+                // Filter by selected service category for smart matching
+                const svcCatId = selectedService?.appliance_category_id || selectedService?.category_id || ""
+                const catFiltered = svcCatId
+                  ? myAppliances.filter((a: any) => !a.appliance_category_id || a.appliance_category_id === svcCatId)
+                  : myAppliances
+                const displayAppl = catFiltered.length > 0 ? catFiltered : myAppliances
+                const selAppl = displayAppl.find((a: any) => a.id === selectedApplId)
+
+                return (
+                  <div className="pt-2">
+                    <label className="block text-xs font-medium text-ink-500 mb-2">
+                      Your Appliance <span className="text-ink-300">(optional)</span>
+                    </label>
+                    {displayAppl.length > 0 && !addingNewAppl ? (
+                      <>
+                        {catFiltered.length < myAppliances.length && selectedService && (
+                          <p className="text-[10px] text-blue-600 bg-blue-50 rounded px-2 py-1 mb-2">
+                            🔧 Showing {catFiltered.length} {selectedService.category_name || "matching"} appliance{catFiltered.length !== 1 ? "s" : ""} — {myAppliances.length - catFiltered.length} other{myAppliances.length - catFiltered.length !== 1 ? "s" : ""} hidden
+                          </p>
+                        )}
+                        <select
+                          className={INPUT}
+                          value={selectedApplId}
+                          onChange={e => {
+                            setSelectedApplId(e.target.value)
+                            const a = displayAppl.find((ap: any) => ap.id === e.target.value)
+                            if (a) {
+                              setApplianceBrand(a.brand_name || a.category || "")
+                              setApplianceModel(a.model || "")
+                            } else {
+                              setApplianceBrand(""); setApplianceModel("")
+                            }
+                          }}
+                        >
+                          <option value="">— Skip / fill later —</option>
+                          {displayAppl.map((a: any) => (
+                            <option key={a.id} value={a.id}>
+                              {a.category || a.category_name || "Appliance"}
+                              {a.brand_name ? ` — ${a.brand_name}` : ""}
+                              {a.model ? ` (${a.model})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        {selAppl && (
+                          <p className="text-xs text-blue-700 mt-1">
+                            ✓ {selAppl.brand_name || "—"} · {selAppl.model || "—"}
+                            {selAppl.is_under_warranty && <span className="ml-2 bg-green-100 text-green-700 rounded px-1">Under Warranty</span>}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setAddingNewAppl(true); setSelectedApplId(""); setApplianceBrand(""); setApplianceModel(""); }}
+                          className="text-xs text-blue-600 mt-1 underline"
+                        >
+                          + Add a different appliance
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-ink-500 mb-1">Brand</label>
+                            <input type="text" placeholder="e.g. Samsung, LG" value={applianceBrand} onChange={(e) => setApplianceBrand(e.target.value)} className={INPUT} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-ink-500 mb-1">Model</label>
+                            <input type="text" placeholder="e.g. AC 1.5 Ton" value={applianceModel} onChange={(e) => setApplianceModel(e.target.value)} className={INPUT} />
+                          </div>
+                        </div>
+                        {myAppliances.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setAddingNewAppl(false)}
+                            className="text-xs text-blue-600 mt-1 underline"
+                          >
+                            ← Pick from my appliances
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1">Issue description <span className="text-ink-300">(optional)</span></label>
                 <textarea placeholder="Describe the problem briefly…" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={INPUT + " resize-none"} />
@@ -550,7 +769,23 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
                   <input type="text" placeholder="House/flat/street *" value={addrForm.address_line1} onChange={(e) => setAddrForm((f) => ({ ...f, address_line1: e.target.value }))} className={INPUT} />
                   <input type="text" placeholder="Landmark/area (optional)" value={addrForm.address_line2} onChange={(e) => setAddrForm((f) => ({ ...f, address_line2: e.target.value }))} className={INPUT} />
                   <div className="grid grid-cols-2 gap-3">
-                    <input type="text" placeholder="City *" value={addrForm.city} onChange={(e) => setAddrForm((f) => ({ ...f, city: e.target.value }))} className={INPUT} />
+                    {cities.length > 0 ? (
+                      <select
+                        value={addrForm.city}
+                        onChange={(e) => {
+                          const city = cities.find((c: any) => c.name === e.target.value);
+                          setAddrForm((f) => ({ ...f, city: e.target.value, state: city?.state ?? f.state }));
+                        }}
+                        className={INPUT}
+                      >
+                        <option value="">Select city *</option>
+                        {cities.map((c: any) => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input type="text" placeholder="City *" value={addrForm.city} onChange={(e) => setAddrForm((f) => ({ ...f, city: e.target.value }))} className={INPUT} />
+                    )}
                     <input type="text" placeholder="State *" value={addrForm.state} onChange={(e) => setAddrForm((f) => ({ ...f, state: e.target.value }))} className={INPUT} />
                   </div>
                   <input type="text" inputMode="numeric" maxLength={6} placeholder="Pincode *" value={addrForm.pincode} onChange={(e) => setAddrForm((f) => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))} className={INPUT} />
@@ -574,7 +809,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
               <h2 className="text-lg font-bold text-ink-900 mb-4">Pick a Date & Time</h2>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-1.5">Preferred Date *</label>
-                <input type="date" value={date} min={new Date().toISOString().split("T")[0]} onChange={(e) => handleDateChange(e.target.value)} className={INPUT} />
+                <input type="date" value={date} min={todayIST()} onChange={(e) => handleDateChange(e.target.value)} className={INPUT} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-500 mb-2">Preferred Time Slot *</label>

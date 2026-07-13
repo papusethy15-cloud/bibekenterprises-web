@@ -1,3 +1,4 @@
+import { todayIST } from "@/lib/tz";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -268,8 +269,8 @@ export default async function ServiceDetailPage({ params }: Props) {
     primaryImageOfPage: (override?.image_url || profile?.banner_url)
       ? { "@type": "ImageObject", url: override?.image_url || profile?.banner_url }
       : undefined,
-    datePublished: new Date().toISOString().split("T")[0],
-    dateModified: new Date().toISOString().split("T")[0],
+    datePublished: todayIST(),
+    dateModified: todayIST(),
     inLanguage: "en-IN",
     speakable: {
       "@type": "SpeakableSpecification",

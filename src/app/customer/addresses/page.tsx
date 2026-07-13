@@ -3,7 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import * as customerLib from "@/lib/customer";
+import { getCities } from "@/lib/domain";
 import { CustomerAddress, CustomerAddressInput } from "@/types";
+import MapPickerModal, { MapPickerResult } from "@/components/MapPickerModal";
 
 const INPUT = "w-full border border-ink-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition";
 
@@ -80,11 +82,13 @@ export default function AddressesPage() {
   const [showForm,  setShowForm]    = useState(false);
   const [editId,    setEditId]      = useState<string | null>(null);
   const [form,      setForm]        = useState<CustomerAddressInput>(BLANK);
+  const [cities,    setCities]      = useState<any[]>([]);
   const [saving,    setSaving]      = useState(false);
   const [deleting,  setDeleting]    = useState<string | null>(null);
   const [error,     setError]       = useState("");
   const [success,   setSuccess]     = useState("");
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   const load = useCallback(async () => {
     if (!customer?.id) return;
@@ -96,6 +100,7 @@ export default function AddressesPage() {
 
   useEffect(() => {
     setAddresses([]); setShowForm(false); setEditId(null); setError("");
+    getCities().then(setCities).catch(() => {});
     if (customer?.id && user?.user_id) { load(); }
     else { setLoading(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,6 +137,29 @@ export default function AddressesPage() {
       })),
       (msg) => setError(msg),
     ).finally(() => setGpsLoading(false));
+  };
+
+  const handleMapConfirm = (result: MapPickerResult) => {
+    // Snap city to DB dropdown if it matches
+    const matchedCity = cities.find(
+      (c: any) => c.name.toLowerCase() === result.city.toLowerCase()
+    );
+    setForm((f) => ({
+      ...f,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      location_source: "map",
+      address_line1: result.address_line1 || f.address_line1,
+      address_line2: result.address_line2 || f.address_line2,
+      city: matchedCity ? matchedCity.name : (result.city || f.city),
+      state: matchedCity ? (matchedCity.state ?? result.state) : (result.state || f.state),
+      pincode: result.pincode || f.pincode,
+    }));
+    if (!matchedCity && result.city) {
+      setError(`Note: '${result.city}' is not in our serviced cities. Please select from the city list.`);
+    } else {
+      setError("");
+    }
   };
 
   const validate = () => {
@@ -213,19 +241,28 @@ export default function AddressesPage() {
             ))}
           </div>
 
-          {/* GPS detect button */}
-          <button
-            type="button"
-            onClick={handleDetectGPS}
-            disabled={gpsLoading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 transition-colors"
-          >
-            {gpsLoading ? (
-              <><span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin border-white" />Detecting location…</>
-            ) : (
-              <>📍 Use My Current Location (GPS)</>
-            )}
-          </button>
+          {/* Location buttons: GPS + Map picker */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleDetectGPS}
+              disabled={gpsLoading}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+            >
+              {gpsLoading ? (
+                <><span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin border-white" />Detecting…</>
+              ) : (
+                <>📍 Use GPS</>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMapPicker(true)}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
+            >
+              🗺️ Pick on Map
+            </button>
+          </div>
 
           {/* GPS status chip */}
           {form.latitude && form.longitude ? (
@@ -252,8 +289,23 @@ export default function AddressesPage() {
             onChange={(e) => set("address_line2", e.target.value)} className={INPUT} />
 
           <div className="grid grid-cols-2 gap-3">
-            <input type="text" placeholder="City *" value={form.city}
-              onChange={(e) => set("city", e.target.value)} className={INPUT} />
+            {cities.length > 0 ? (
+              <select value={form.city}
+                onChange={(e) => {
+                  const city = cities.find((c: any) => c.name === e.target.value);
+                  set("city", e.target.value);
+                  if (city) set("state", city.state ?? "");
+                }}
+                className={INPUT}>
+                <option value="">Select city *</option>
+                {cities.map((c: any) => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input type="text" placeholder="City *" value={form.city}
+                onChange={(e) => set("city", e.target.value)} className={INPUT} />
+            )}
             <input type="text" placeholder="State *" value={form.state}
               onChange={(e) => set("state", e.target.value)} className={INPUT} />
           </div>
@@ -333,6 +385,14 @@ export default function AddressesPage() {
           ))}
         </div>
       )}
+    <MapPickerModal
+        open={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={handleMapConfirm}
+        initialLat={form.latitude}
+        initialLng={form.longitude}
+        servicedCities={cities.map((c: any) => c.name)}
+      />
     </div>
   );
 }

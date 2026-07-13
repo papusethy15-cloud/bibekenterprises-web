@@ -147,6 +147,9 @@ export default function AllServicesClient({ services, categories, brand, cities,
   const resolvePrice = (svc: DomainService) =>
     resolveCityPrice(svc.base_price, priceCache[svc.service_id] ?? [], selectedCity?.name);
 
+  // Placeholder names that indicate profile is not yet set up
+  const PLACEHOLDER_NAMES = new Set(["new customer", "new user", "customer", "user"]);
+
   // ── Book button handler ───────────────────────────────────────────────────
   const handleBook = (svc: DomainService) => {
     if (!isLoggedIn) {
@@ -154,6 +157,17 @@ export default function AllServicesClient({ services, categories, brand, cities,
         `/services#book-${encodeURIComponent(svc.name)}`
       )}`;
       return;
+    }
+    // Profile gate: check if name is placeholder or mobile is missing
+    if (hydrated && customer) {
+      const _name = (customer.name ?? "").trim();
+      const _mobile = (customer.mobile ?? "").trim();
+      const _nameIncomplete = !_name || PLACEHOLDER_NAMES.has(_name.toLowerCase());
+      if (_nameIncomplete || !_mobile) {
+        // Redirect to profile page with a return-to hint
+        window.location.href = `/customer/profile?redirect=${encodeURIComponent("/services")}`;
+        return;
+      }
     }
     fetchCityPrices(svc.service_id);
     setPanel({ mode: "booking", service: svc });

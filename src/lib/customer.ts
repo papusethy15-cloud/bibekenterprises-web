@@ -170,3 +170,18 @@ export async function getRazorpayKey(): Promise<string | null> {
     return res.data?.data?.razorpay_key_id ?? null;
   } catch { return null; }
 }
+
+// ── Appliances ────────────────────────────────────────────────────────────────
+export async function getMyAppliances(): Promise<any[]> {
+  try {
+    const res = await api.get("/appliances/me");
+    return res.data?.data ?? [];
+  } catch { return []; }
+}
+export async function addMyAppliance(payload: {
+  brand_id?: string; type_id?: string; appliance_category_id?: string;
+  category?: string; model?: string; serial_number?: string; notes?: string;
+}): Promise<any> {
+  const res = await api.post("/appliances/me", payload);
+  return res.data?.data;
+}

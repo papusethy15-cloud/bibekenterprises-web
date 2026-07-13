@@ -1,4 +1,5 @@
 "use client";
+import { fmtDateIST, fmtDateTimeIST, relativeTimeIST, todayIST } from "@/lib/tz";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -428,6 +429,15 @@ export default function MyBookingsPage() {
                           <div key={l}><p className="text-xs text-ink-400">{l}</p><p className="font-semibold text-ink-900">{v}</p></div>
                         ))}
                       </div>
+                      {/* Full service address */}
+                      {(detail.address_str || detail.city) && (
+                        <div className="bg-ink-50 rounded-xl p-3 text-sm text-ink-700">
+                          <span className="font-medium text-ink-500 block mb-0.5">
+                            📍 Service Address{detail.address_label ? ` · ${detail.address_label}` : ""}
+                          </span>
+                          {detail.address_str && detail.address_str !== "—" ? detail.address_str : detail.city || "—"}
+                        </div>
+                      )}
                       {detail.notes && <div className="bg-ink-50 rounded-xl p-3 text-sm text-ink-600"><span className="font-medium">Notes: </span>{detail.notes}</div>}
                       {detail.cancelled_reason && <div className="bg-red-50 rounded-xl p-3 text-sm text-red-700"><span className="font-medium">Cancellation reason: </span>{detail.cancelled_reason}</div>}
 

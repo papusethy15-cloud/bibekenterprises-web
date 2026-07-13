@@ -88,6 +88,7 @@ export interface DomainService {
   // [service] → Image, in the Admin Dashboard). Null until an admin sets one.
   image_url?: string | null;
   thumbnail_url?: string | null;
+  appliance_category_id?: string | null;  // service category FK for appliance filtering
 }
 
 export interface DomainCategory {
@@ -247,11 +248,13 @@ export interface CreateBookingInput {
   source?: string;
   domain_id?: string;
   city_id?: string;
+  city?: string;
   force_duplicate?: boolean;
   coupon_code?: string;
   coupon_id?: string;
   coupon_discount?: number;
   base_amount?: number;
+  appliance_id?: string;
 }
 
 export interface Customer {
