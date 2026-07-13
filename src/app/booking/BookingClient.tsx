@@ -9,8 +9,8 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useCity } from "@/context/CityContext";
 import * as customerLib from "@/lib/customer";
-import { getDomainPageData, getServiceCityPrices, resolveCityPrice } from "@/lib/domain";
-import { CustomerAddress, DomainService, ServiceCityPrice } from "@/types";
+import { getDomainPageData, getServiceCityPrices, resolveCityPrice, getDomainCities } from "@/lib/domain";
+import { CustomerAddress, City, DomainService, ServiceCityPrice } from "@/types";
 
 // Canonical slot values stored in DB — HH:MM-HH:MM (24h)
 const TIME_SLOTS = [
@@ -136,6 +136,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   const [notes,             setNotes]             = useState("");
 
   /* City-aware pricing for the selected service */
+  const [cities,        setCities]        = useState<City[]>([]);
   const [cityPrices,    setCityPrices]    = useState<ServiceCityPrice[]>([]);
   const [loadingPrice,  setLoadingPrice]  = useState(false);
 
