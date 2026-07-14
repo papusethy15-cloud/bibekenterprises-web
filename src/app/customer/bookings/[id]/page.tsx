@@ -681,7 +681,7 @@ export default function BookingDetailPage() {
 
   const customerStatus = toCustomerStatus(booking.status);
   const isActive = ["PENDING", "CONFIRMED", "ASSIGNED", "ACCEPTED", "EN_ROUTE", "ARRIVED", "INSPECTING", "IN_PROGRESS", "WORK_PAUSED", "RESCHEDULED"].includes(booking.status);
-  const isEnRoute = booking.status === "EN_ROUTE";
+  const isEnRoute = ["ASSIGNED", "ACCEPTED", "EN_ROUTE"].includes(booking.status);
   const isCompleted = customerStatus === "COMPLETED";
   const isCancelled = booking.status === "CANCELLED";
 
@@ -786,7 +786,7 @@ export default function BookingDetailPage() {
           {isEnRoute && (
             <button onClick={() => setShowTracker(true)}
               className="flex-1 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-semibold hover:bg-cyan-600 transition-colors flex items-center justify-center gap-2">
-              🗺️ Track Technician Live
+              {booking.status === "EN_ROUTE" ? "🗺️ Track Technician Live" : "🔍 Track Booking Status"}
             </button>
           )}
           {canApplyCoupon && (

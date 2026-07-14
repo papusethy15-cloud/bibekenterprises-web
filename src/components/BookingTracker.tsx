@@ -30,7 +30,7 @@ interface TechnicianInfo {
 }
 
 interface TrackingState {
-  status: string;          // booking status from backend
+  status: string;
   technician: TechnicianInfo | null;
   destination: { latitude?: number; longitude?: number; city?: string } | null;
   techLat: number | null;
@@ -42,51 +42,53 @@ type Phase = "WAITING" | "ACCEPTED" | "TRACKING" | "NO_TECH" | "DONE";
 interface Props {
   bookingId: string;
   bookingNumber: string;
-  brand: string;           // hex colour e.g. "#1A3FA4"
-  onBack?: () => void;     // navigate to booking history
+  brand: string;
+  onBack?: () => void;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const API_BASE  = process.env.NEXT_PUBLIC_API_URL ?? "";
-const WS_BASE   = API_BASE.replace(/^https/, "wss").replace(/^http(?!s)/, "ws").replace("/api/v1", "");
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+const WS_BASE  = API_BASE.replace(/^https/, "wss").replace(/^http(?!s)/, "ws").replace("/api/v1", "");
 
-// ASSIGNED = job offered but technician hasn't accepted yet → stay in WAITING
-// ACCEPTED and beyond = technician confirmed → show ACCEPTED/TRACKING phases
 const ACCEPTED_STATUSES = ["ACCEPTED", "EN_ROUTE", "ARRIVED", "INSPECTING", "IN_PROGRESS"];
 const MOVING_STATUSES   = ["EN_ROUTE"];
 const DONE_STATUSES     = ["COMPLETED", "PAID", "CLOSED", "SETTLED", "CANCELLED"];
 
 function statusToPhase(status: string, tech: TechnicianInfo | null, noTechFlag: boolean): Phase {
   if (DONE_STATUSES.includes(status)) return "DONE";
-  // If booking is still ASSIGNED (pending technician accept), always stay WAITING
-  // even if we have a technician name — they might still reject.
   if (status === "ASSIGNED" || !ACCEPTED_STATUSES.includes(status)) {
     if (noTechFlag) return "NO_TECH";
     return "WAITING";
   }
-  // Technician has ACCEPTED the job
-  if (!tech) return "WAITING"; // shouldn't happen but be safe
+  if (!tech) return "WAITING";
   if (MOVING_STATUSES.includes(status)) return "TRACKING";
   return "ACCEPTED";
 }
 
+// ── Declare google as ambient to avoid TS errors ──────────────────────────────
+declare const google: any;
+
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function BookingTracker({ bookingId, bookingNumber, brand, onBack }: Props) {
-  const [phase,     setPhase]     = useState<Phase>("WAITING");
-  const [tracking,  setTracking]  = useState<TrackingState>({
+  const [phase,    setPhase]    = useState<Phase>("WAITING");
+  const [tracking, setTracking] = useState<TrackingState>({
     status: "CONFIRMED", technician: null, destination: null, techLat: null, techLng: null,
   });
-  const [mapsKey,   setMapsKey]   = useState<string | null>(null);
-  const [noTech,    setNoTech]    = useState(false);
-  const [wsError,   setWsError]   = useState(false);
+  const [mapsKey,  setMapsKey]  = useState<string | null>(null);
+  const [noTech,   setNoTech]   = useState(false);
+  const [wsError,  setWsError]  = useState(false);
+  const [mapReady, setMapReady] = useState(false); // true once google.maps is loaded
 
-  const wsRef      = useRef<WebSocket | null>(null);
-  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const mapRef     = useRef<HTMLDivElement>(null);
-  const gmapRef    = useRef<any>(null);           // google.maps.Map
-  const markerRef  = useRef<any>(null);           // technician marker
+  const wsRef     = useRef<WebSocket | null>(null);
+  const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mapRef    = useRef<HTMLDivElement>(null);
+  const gmapRef   = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  // Keep a ref to latest tracking so map callbacks always see fresh values
+  const trackingRef = useRef<TrackingState>(tracking);
+  useEffect(() => { trackingRef.current = tracking; }, [tracking]);
 
-  // ── Fetch Google Maps key (public, no auth needed) ──────────────────────────
+  // ── Fetch Google Maps key ────────────────────────────────────────────────────
   useEffect(() => {
     api.get("/settings/maps/public").then((r) => {
       const key = r.data?.data?.google_maps_api_key;
@@ -94,19 +96,17 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
     }).catch(() => {});
   }, []);
 
-  // ── REST poll for tracking state ────────────────────────────────────────────
+  // ── REST poll for tracking state ─────────────────────────────────────────────
   const fetchTrackingState = useCallback(async () => {
     try {
       const r = await api.get(`/tracking/booking/${bookingId}`);
       const d = r.data?.data;
       if (!d) return;
-
       const tech: TechnicianInfo | null = d.technician
         ? { id: d.technician.id, name: d.technician.name, mobile: d.technician.mobile }
         : null;
       const dest = d.destination ?? null;
       const loc  = d.current_location;
-
       setTracking(prev => ({
         status:      d.status ?? prev.status,
         technician:  tech ?? prev.technician,
@@ -117,62 +117,36 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
     } catch {}
   }, [bookingId]);
 
-  // ── Determine if any techs were online at booking time ──────────────────────
-  useEffect(() => {
-    // We check the booking status log for "no online technicians" note
-    api.get(`/bookings/${bookingId}`).then((r) => {
-      const b = r.data?.data;
-      if (!b) return;
-      if (b.technician_name === null && b.status === "CONFIRMED") {
-        // Could be no-tech scenario — we'll let the 15s poll resolve it
-      }
-    }).catch(() => {});
-    fetchTrackingState();
-  }, [bookingId, fetchTrackingState]);
+  useEffect(() => { fetchTrackingState(); }, [fetchTrackingState]);
 
   // ── Connect WebSocket ────────────────────────────────────────────────────────
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    if (!token) {
-      setWsError(true);
-      return;
-    }
+    if (!token) { setWsError(true); return; }
 
     const wsUrl = `${WS_BASE}/ws/booking/${bookingId}?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onopen = () => setWsError(false);
+    ws.onopen  = () => setWsError(false);
     ws.onerror = () => setWsError(true);
+    ws.onclose = () => setWsError(true);
 
     ws.onmessage = (evt) => {
       try {
-        const msg = JSON.parse(evt.data);
+        const msg  = JSON.parse(evt.data);
         const type = msg.type as string;
         const pl   = msg.payload ?? {};
 
-        if (type === "BOOKING_STATUS_CHANGED") {
-          // Generic status update — refresh from REST to get authoritative state
-          fetchTrackingState();
-        }
+        if (type === "BOOKING_STATUS_CHANGED") { fetchTrackingState(); }
 
-        // Only show technician info once they have ACCEPTED — not on mere ASSIGNMENT_CREATED
-        // (which only means the system offered the job; they may reject it)
         if (type === "ASSIGNMENT_ACCEPTED") {
-          setTracking(prev => ({
-            ...prev,
-            status: pl.status ?? prev.status,
-          }));
-          // Fetch full tracking state to get confirmed technician details
+          setTracking(prev => ({ ...prev, status: pl.status ?? prev.status }));
           fetchTrackingState();
         }
-
         if (type === "ASSIGNMENT_CREATED") {
-          // Job was offered to a technician — stay in WAITING phase.
-          // Do NOT show technician name yet; they may reject the offer.
           setTracking(prev => ({ ...prev, status: pl.status ?? prev.status }));
         }
-
         if (type === "TECHNICIAN_LOCATION_UPDATE") {
           const lat = pl.latitude  as number | null;
           const lng = pl.longitude as number | null;
@@ -180,101 +154,114 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
             setTracking(prev => ({ ...prev, techLat: lat, techLng: lng }));
           }
         }
-
         if (type === "ASSIGNMENT_REJECTED") {
-          // Technician rejected — stay in WAITING, auto-assign will try next
           setTracking(prev => ({ ...prev, status: pl.status ?? prev.status, technician: null }));
         }
-
-        if (type === "BOOKING_NEEDS_MANUAL_ASSIGN") {
-          setNoTech(true);
-        }
+        if (type === "BOOKING_NEEDS_MANUAL_ASSIGN") { setNoTech(true); }
       } catch {}
     };
-
-    ws.onclose = () => setWsError(true);
 
     return () => { ws.close(); };
   }, [bookingId, fetchTrackingState]);
 
-  // ── REST fallback poll every 15s when WS is unavailable ─────────────────────
+  // ── REST fallback poll every 15s when WS unavailable ────────────────────────
   useEffect(() => {
     if (!wsError) return;
     pollRef.current = setInterval(fetchTrackingState, 15_000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [wsError, fetchTrackingState]);
 
-  // ── Derive phase from tracking state ────────────────────────────────────────
+  // ── Derive phase ─────────────────────────────────────────────────────────────
   useEffect(() => {
     setPhase(statusToPhase(tracking.status, tracking.technician, noTech));
   }, [tracking.status, tracking.technician, noTech]);
 
-  // ── Load Google Maps when mapsKey becomes available ──────────────────────────
+  // ── Load Google Maps SDK once key is available ───────────────────────────────
+  // We load the SDK early (not waiting for TRACKING phase) so it's ready by the
+  // time the map div mounts. We set mapReady=true once google.maps is available.
   useEffect(() => {
-    if (!mapsKey || !mapRef.current) return;
-    if (typeof window === "undefined") return;
-
+    if (!mapsKey || typeof window === "undefined") return;
     const w = window as any;
-    const loadMap = () => {
-      if (!mapRef.current) return;
-      const center = { lat: tracking.destination?.latitude ?? 20.2961, lng: tracking.destination?.longitude ?? 85.8245 };
-      const map = new w.google.maps.Map(mapRef.current, {
-        center,
-        zoom: 14,
-        disableDefaultUI: true,
-        zoomControl: true,
-        styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
-      });
-      gmapRef.current = map;
-
-      // Destination marker (customer address)
-      if (tracking.destination?.latitude && tracking.destination?.longitude) {
-        new w.google.maps.Marker({
-          map,
-          position: { lat: tracking.destination.latitude, lng: tracking.destination.longitude },
-          icon: { url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png" },
-          title: "Your address",
-        });
-      }
-
-      // Technician marker
-      if (tracking.techLat && tracking.techLng) {
-        markerRef.current = new w.google.maps.Marker({
-          map,
-          position: { lat: tracking.techLat, lng: tracking.techLng },
-          icon: { url: "https://maps.google.com/mapfiles/ms/icons/orange-dot.png", scaledSize: new w.google.maps.Size(40, 40) },
-          title: tracking.technician?.name ?? "Technician",
-        });
-        map.setCenter({ lat: tracking.techLat, lng: tracking.techLng });
-      }
-    };
 
     if (w.google?.maps) {
-      loadMap();
-    } else {
-      const scriptId = "gmap-tracker";
-      if (!document.getElementById(scriptId)) {
-        const script = document.createElement("script");
-        script.id = scriptId;
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}`;
-        script.async = true;
-        script.onload = loadMap;
-        document.head.appendChild(script);
-      } else {
-        // Script already loading — poll
-        const t = setInterval(() => {
-          if (w.google?.maps) { clearInterval(t); loadMap(); }
-        }, 200);
-      }
+      setMapReady(true);
+      return;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapsKey, phase]);
 
-  // ── Move technician marker when location updates ─────────────────────────────
-  useEffect(() => {
+    const scriptId = "gmap-tracker";
+    if (document.getElementById(scriptId)) {
+      // Script already injected — poll until ready
+      const t = setInterval(() => {
+        if (w.google?.maps) { clearInterval(t); setMapReady(true); }
+      }, 150);
+      return () => clearInterval(t);
+    }
+
+    const script = document.createElement("script");
+    script.id  = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}`;
+    script.async = true;
+    script.onload = () => setMapReady(true);
+    script.onerror = () => console.warn("[BookingTracker] Google Maps failed to load");
+    document.head.appendChild(script);
+  }, [mapsKey]);
+
+  // ── Initialize the map once: SDK ready + map div mounted + phase=TRACKING ────
+  // Using a callback ref on mapRef so we know exactly when the div is in the DOM.
+  const onMapDivMount = useCallback((node: HTMLDivElement | null) => {
+    (mapRef as any).current = node;
+    if (!node || !mapReady) return;
+    if (gmapRef.current) return; // already initialized
+
     const w = window as any;
-    if (!w.google?.maps || !gmapRef.current) return;
+    const t = trackingRef.current;
+    const center = (t.destination?.latitude && t.destination?.longitude)
+      ? { lat: t.destination.latitude, lng: t.destination.longitude }
+      : (t.techLat && t.techLng)
+      ? { lat: t.techLat, lng: t.techLng }
+      : { lat: 20.2961, lng: 85.8245 }; // Bhubaneswar fallback
+
+    const map = new w.google.maps.Map(node, {
+      center,
+      zoom: 14,
+      disableDefaultUI: true,
+      zoomControl: true,
+      styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
+    });
+    gmapRef.current = map;
+
+    // Destination marker
+    if (t.destination?.latitude && t.destination?.longitude) {
+      new w.google.maps.Marker({
+        map,
+        position: { lat: t.destination.latitude, lng: t.destination.longitude },
+        icon: { url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png" },
+        title: "Your address",
+      });
+    }
+
+    // Technician marker (if location already known)
+    if (t.techLat && t.techLng) {
+      markerRef.current = new w.google.maps.Marker({
+        map,
+        position: { lat: t.techLat, lng: t.techLng },
+        icon: {
+          url: "https://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+          scaledSize: new w.google.maps.Size(40, 40),
+        },
+        title: t.technician?.name ?? "Technician",
+      });
+      map.setCenter({ lat: t.techLat, lng: t.techLng });
+    }
+  }, [mapReady]); // re-run if mapReady changes while div is already mounted
+
+  // ── Move technician marker on location updates ────────────────────────────────
+  useEffect(() => {
+    if (!gmapRef.current) return;
     if (tracking.techLat == null || tracking.techLng == null) return;
+    const w = window as any;
+    if (!w.google?.maps) return;
+
     const pos = { lat: tracking.techLat, lng: tracking.techLng };
     if (markerRef.current) {
       markerRef.current.setPosition(pos);
@@ -282,7 +269,10 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
       markerRef.current = new w.google.maps.Marker({
         map: gmapRef.current,
         position: pos,
-        icon: { url: "https://maps.google.com/mapfiles/ms/icons/orange-dot.png", scaledSize: new w.google.maps.Size(40, 40) },
+        icon: {
+          url: "https://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+          scaledSize: new w.google.maps.Size(40, 40),
+        },
         title: tracking.technician?.name ?? "Technician",
       });
     }
@@ -303,13 +293,12 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
         {/* Phase content */}
         <div className="p-6">
 
-          {/* ── WAITING ───────────────────────────────────────────────────── */}
+          {/* ── WAITING ── */}
           {phase === "WAITING" && (
             <div className="text-center">
               <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl animate-pulse" style={{ background: `${brand}15` }}>🔍</div>
               <h2 className="text-xl font-bold text-ink-900 mb-2">Finding your technician…</h2>
               <p className="text-ink-400 text-sm mb-6">Our system is matching you with the best available technician. This usually takes under 2 minutes.</p>
-              {/* Pulsing dots */}
               <div className="flex justify-center gap-2 mb-6">
                 {[0,1,2].map(i => (
                   <div key={i} className="w-3 h-3 rounded-full" style={{ background: brand, animationDelay: `${i * 0.2}s`, animation: "pulse 1.2s ease-in-out infinite" }} />
@@ -319,7 +308,7 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
             </div>
           )}
 
-          {/* ── NO TECH ───────────────────────────────────────────────────── */}
+          {/* ── NO TECH ── */}
           {phase === "NO_TECH" && (
             <div className="text-center">
               <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl" style={{ background: "#FFF7ED" }}>📋</div>
@@ -331,7 +320,7 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
             </div>
           )}
 
-          {/* ── ACCEPTED ──────────────────────────────────────────────────── */}
+          {/* ── ACCEPTED ── */}
           {phase === "ACCEPTED" && tracking.technician && (
             <div>
               <div className="text-center mb-6">
@@ -339,7 +328,6 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
                 <h2 className="text-xl font-bold text-ink-900 mb-1">Technician Assigned!</h2>
                 <p className="text-ink-400 text-sm">Your technician has accepted the booking and will be on their way soon.</p>
               </div>
-              {/* Technician card */}
               <div className="bg-ink-50 rounded-xl p-4 flex items-center gap-4 mb-4">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
                      style={{ background: brand }}>
@@ -359,7 +347,7 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
             </div>
           )}
 
-          {/* ── TRACKING ──────────────────────────────────────────────────── */}
+          {/* ── TRACKING ── */}
           {phase === "TRACKING" && (
             <div>
               <div className="flex items-center gap-3 mb-4">
@@ -377,11 +365,24 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
                 </div>
               </div>
 
-              {/* Map */}
+              {/* Map container — always rendered when phase=TRACKING so the ref mounts */}
               {mapsKey ? (
-                <div ref={mapRef} className="w-full rounded-xl overflow-hidden mb-3" style={{ height: 300 }} />
+                <>
+                  {/* Map div — uses callback ref so we know the exact moment it mounts */}
+                  <div
+                    ref={onMapDivMount}
+                    className="w-full rounded-xl overflow-hidden mb-3"
+                    style={{ height: 300 }}
+                  />
+                  {!tracking.techLat && (
+                    <p className="text-xs text-center text-ink-400 mb-3 -mt-1">
+                      🛰️ Waiting for technician location…
+                    </p>
+                  )}
+                </>
               ) : (
-                <div className="bg-ink-50 rounded-xl p-4 text-center text-sm text-ink-400 mb-3" style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div className="bg-ink-50 rounded-xl p-4 text-center text-sm text-ink-400 mb-3"
+                     style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div>
                     <div className="text-3xl mb-2">🗺️</div>
                     <p>Map not available</p>
@@ -397,7 +398,7 @@ export default function BookingTracker({ bookingId, bookingNumber, brand, onBack
             </div>
           )}
 
-          {/* ── DONE ──────────────────────────────────────────────────────── */}
+          {/* ── DONE ── */}
           {phase === "DONE" && (
             <div className="text-center">
               <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl" style={{ background: "#F0FDF4" }}>🎉</div>
