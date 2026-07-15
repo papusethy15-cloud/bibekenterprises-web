@@ -185,7 +185,7 @@ function CouponModal({ bookingId, bookingAmount, onApplied, onClose }: {
         {result && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
             <p className="text-green-700 font-semibold text-sm">✅ {result.coupon_name ?? code}</p>
-            <p className="text-green-600 text-sm">Discount: ₹{result.discount_amount?.toFixed(2)}</p>
+            <p className="text-green-600 text-sm">Discount: ₹{Math.round(result.discount_amount ?? 0).toString()}</p>
             {result.description && <p className="text-green-600 text-xs">{result.description}</p>}
           </div>
         )}
@@ -295,7 +295,7 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
                   <p className={`text-xs font-medium mt-0.5 ${qs.color}`}>{qs.label}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-ink-900">₹{Number(q.total_amount ?? 0).toFixed(2)}</p>
+                  <p className="font-bold text-ink-900">₹{Math.round(Number(q.total_amount ?? 0)).toString()}</p>
                   <p className="text-xs text-ink-400">{new Date(q.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</p>
                 </div>
               </div>
@@ -309,7 +309,7 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
                 ].map(({ label, val }) => (
                   <div key={label} className="bg-ink-50 rounded-xl p-2">
                     <p className="text-ink-400">{label}</p>
-                    <p className="font-semibold text-ink-800">₹{Number(val ?? 0).toFixed(2)}</p>
+                    <p className="font-semibold text-ink-800">₹{Math.round(Number(val ?? 0)).toString()}</p>
                   </div>
                 ))}
               </div>
@@ -344,7 +344,7 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
                                   {s.is_repeat_complaint && <span className="ml-1 text-green-600 font-medium">(Warranty)</span>}
                                 </div>
                                 <span className="font-semibold text-ink-900 shrink-0">
-                                  {s.is_repeat_complaint ? "₹0.00" : `₹${Number(s.total_price ?? 0).toFixed(2)}`}
+                                  {s.is_repeat_complaint ? "₹0" : `₹${Math.round(Number(s.total_price ?? 0)).toLocaleString("en-IN")}`}
                                 </span>
                               </div>
                             ))}
@@ -362,7 +362,7 @@ function QuotationCard({ bookingId, bookingStatus, onUpdate }: {
                                   {p.appliance_label && <span className="text-ink-400 ml-1">({p.appliance_label})</span>}
                                   {p.quantity > 1 && <span className="text-ink-400 ml-1">× {p.quantity}</span>}
                                 </div>
-                                <span className="font-semibold text-ink-900 shrink-0">₹{Number(p.total_price ?? 0).toFixed(2)}</span>
+                                <span className="font-semibold text-ink-900 shrink-0">₹{Math.round(Number(Number(p.total_price ?? 0))).toLocaleString("en-IN")}</span>
                               </div>
                             ))}
                           </div>
@@ -532,9 +532,9 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
                   </span>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-ink-900">₹{Number(inv.total_amount ?? 0).toFixed(2)}</p>
+                  <p className="font-bold text-ink-900">₹{Math.round(Number(Number(inv.total_amount ?? 0))).toLocaleString("en-IN")}</p>
                   {!isPaid && balanceDue > 0 && (
-                    <p className="text-xs text-orange-600">Due: ₹{balanceDue.toFixed(2)}</p>
+                    <p className="text-xs text-orange-600">Due: ₹{Math.round(Number(balanceDue)).toLocaleString("en-IN")}</p>
                   )}
                 </div>
               </div>
@@ -548,7 +548,7 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
                 ].map(({ label, val }) => (
                   <div key={label} className="bg-ink-50 rounded-xl p-2">
                     <p className="text-ink-400">{label}</p>
-                    <p className="font-semibold text-ink-800">₹{Number(val ?? 0).toFixed(2)}</p>
+                    <p className="font-semibold text-ink-800">₹{Math.round(Number(val ?? 0)).toString()}</p>
                   </div>
                 ))}
               </div>
@@ -581,7 +581,7 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
                                   {s.appliance_label && <span className="text-ink-400 ml-1">({s.appliance_label})</span>}
                                   {(s.quantity ?? 1) > 1 && <span className="text-ink-400 ml-1">× {s.quantity}</span>}
                                 </div>
-                                <span className="font-semibold text-ink-900 shrink-0">₹{Number(s.total_price ?? 0).toFixed(2)}</span>
+                                <span className="font-semibold text-ink-900 shrink-0">₹{Math.round(Number(Number(s.total_price ?? 0))).toLocaleString("en-IN")}</span>
                               </div>
                             ))}
                           </div>
@@ -597,7 +597,7 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
                                   <span className="text-ink-800 font-medium">{p.part_name ?? p.name}</span>
                                   {(p.quantity ?? 1) > 1 && <span className="text-ink-400 ml-1">× {p.quantity}</span>}
                                 </div>
-                                <span className="font-semibold text-ink-900 shrink-0">₹{Number(p.total_price ?? 0).toFixed(2)}</span>
+                                <span className="font-semibold text-ink-900 shrink-0">₹{Math.round(Number(Number(p.total_price ?? 0))).toLocaleString("en-IN")}</span>
                               </div>
                             ))}
                           </div>
@@ -737,9 +737,9 @@ export default function BookingDetailPage() {
             <p className="text-xs text-ink-400 font-mono">{booking.booking_number}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-2xl font-bold text-ink-900">₹{Number(booking.total_amount).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-ink-900">₹{Math.round(Number(Number(booking.total_amount))).toLocaleString("en-IN")}</p>
             {booking.discount_amount && booking.discount_amount > 0 ? (
-              <p className="text-xs text-green-600">-₹{Number(booking.discount_amount).toFixed(2)} saved</p>
+              <p className="text-xs text-green-600">-₹{Math.round(Number(Number(booking.discount_amount))).toLocaleString("en-IN")} saved</p>
             ) : null}
           </div>
         </div>
@@ -822,7 +822,7 @@ export default function BookingDetailPage() {
           ) : null}
           <div className="border-t border-ink-100 pt-2 flex justify-between font-bold text-ink-900">
             <span>Total</span>
-            <span>₹{Number(booking.total_amount).toFixed(2)}</span>
+            <span>₹{Math.round(Number(Number(booking.total_amount))).toLocaleString("en-IN")}</span>
           </div>
         </div>
       </div>
@@ -867,7 +867,7 @@ function PriceRow({ label, value, isDiscount }: { label: string; value: number; 
     <div className="flex justify-between text-ink-600">
       <span>{label}</span>
       <span className={isDiscount ? "text-green-600" : ""}>
-        {isDiscount ? "-" : ""}₹{Math.abs(Number(value)).toFixed(2)}
+        {isDiscount ? "-" : ""}₹{Math.round(Number(Math.abs(Number(value)))).toLocaleString("en-IN")}
       </span>
     </div>
   );

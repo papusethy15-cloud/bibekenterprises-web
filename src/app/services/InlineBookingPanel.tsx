@@ -80,8 +80,9 @@ export default function InlineBookingPanel({
     cityPrices,
     selectedCity?.name
   );
-  const gst = Math.round((price * service.gst_percent) / 100);
-  const total = price + gst;
+  const taxableAmount = Math.max(price - couponDiscount, 0);
+  const gst = Math.round((taxableAmount * service.gst_percent) / 100);
+  const total = taxableAmount + gst;
 
   const loadAddresses = useCallback(async () => {
     setLoadingAddr(true);
@@ -225,7 +226,11 @@ export default function InlineBookingPanel({
       <div className="flex items-baseline gap-2 mt-1">
         <span className="text-2xl font-extrabold text-ink-900">₹{price.toLocaleString("en-IN")}</span>
         <span className="text-sm text-ink-400">+ {service.gst_percent}% GST</span>
-        <span className="ml-auto text-sm font-semibold text-ink-700">₹{total.toLocaleString("en-IN")} total</span>
+        {couponDiscount > 0 ? (
+          <span className="ml-auto text-sm font-semibold text-green-700">After discount: ₹{taxableAmount.toLocaleString("en-IN")} + GST = ₹{total.toLocaleString("en-IN")}</span>
+        ) : (
+          <span className="ml-auto text-sm font-semibold text-ink-700">₹{total.toLocaleString("en-IN")} total</span>
+        )}
       </div>
     </div>
   );
@@ -487,7 +492,7 @@ export default function InlineBookingPanel({
         {couponDiscount > 0 && (
           <div className="flex justify-between text-sm font-semibold px-1">
             <span className="text-ink-500">Final Amount</span>
-            <span className="text-green-700">₹{Math.max(total - couponDiscount, 0).toLocaleString("en-IN")}</span>
+            <span className="text-green-700">₹{total.toLocaleString("en-IN")}</span>
           </div>
         )}
 

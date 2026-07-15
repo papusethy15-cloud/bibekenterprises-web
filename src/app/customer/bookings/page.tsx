@@ -281,7 +281,7 @@ export default function MyBookingsPage() {
     catch (e: any) { alert(e?.response?.data?.detail ?? "Could not download PDF."); }
   };
 
-  const fmt = (n?: number) => n != null ? `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
+  const fmt = (n?: number) => n != null ? `₹${Math.round(n).toLocaleString("en-IN")}` : "—";
   const fmtDate = (s?: string) => s ? new Date(s).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
 
   const isEnRoute = detail?.status === "EN_ROUTE";

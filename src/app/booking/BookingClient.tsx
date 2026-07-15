@@ -464,12 +464,13 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
           <div className="text-left space-y-2 text-sm text-ink-600 mb-8 bg-ink-50 rounded-xl p-4">
             {[
               ["Service",   selectedService?.name ?? "—"],
-              ["Price",     `₹${resolvedPrice.toLocaleString("en-IN")}${activeCityName ? ` (${activeCityName})` : ""}`],
+              ["Base Price", `₹${resolvedPrice.toLocaleString("en-IN")}${activeCityName ? ` (${activeCityName})` : ""}`],
               ...(couponDiscount > 0 ? [
-                ["Coupon", couponCode],
-                ["Discount", `-₹${couponDiscount.toLocaleString("en-IN")}`],
-                ["Final Amount", `₹${Math.max(resolvedPrice - couponDiscount, 0).toLocaleString("en-IN")}`],
+                ["Coupon Discount", `-₹${couponDiscount.toLocaleString("en-IN")}`],
+                ["Taxable Amount", `₹${Math.max(resolvedPrice - couponDiscount, 0).toLocaleString("en-IN")}`],
               ] : []),
+              [`GST (${selectedService?.gst_percent ?? 18}%)`, `₹${Math.round(Math.max(resolvedPrice - couponDiscount, 0) * (selectedService?.gst_percent ?? 18) / 100).toLocaleString("en-IN")}`],
+              ["Total Amount", `₹${(Math.max(resolvedPrice - couponDiscount, 0) + Math.round(Math.max(resolvedPrice - couponDiscount, 0) * (selectedService?.gst_percent ?? 18) / 100)).toLocaleString("en-IN")}`],
               ["Date",      date],
               ["Time",      TIME_SLOTS.find(s => s.value === timeSlot)?.label || timeSlot],
               ["Address",   addr ? `${addr.address_line1}, ${addr.city} – ${addr.pincode}` : "—"],
