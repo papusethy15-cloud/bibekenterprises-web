@@ -114,8 +114,11 @@ export default function InlineBookingPanel({
     try {
       const res = await api.post("/coupons/validate", {
         code: couponInput.trim().toUpperCase(),
-        domain_id: domainId || undefined,
         order_amount: total,
+        domain_id: domainId || undefined,
+        customer_mobile: customer?.mobile || undefined,
+        service_ids: service?.service_id ? [service.service_id] : undefined,
+        category_ids: service?.category_id ? [service.category_id] : undefined,
       });
       const d = res.data.data;
       setCouponCode(d.code);

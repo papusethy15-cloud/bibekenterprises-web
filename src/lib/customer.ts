@@ -132,9 +132,22 @@ export async function verifyPayment(transactionId: string, providerId: string, s
 }
 
 // ── Coupons ───────────────────────────────────────────────────────────────────
-export async function validateCoupon(code: string, orderAmount: number): Promise<any> {
+export async function validateCoupon(
+  code: string,
+  orderAmount: number,
+  opts?: {
+    customerMobile?: string;
+    serviceIds?: string[];
+    categoryIds?: string[];
+  }
+): Promise<any> {
   const res = await api.post("/coupons/validate", {
-    code, order_amount: orderAmount, domain_id: DOMAIN_ID || undefined,
+    code,
+    order_amount: orderAmount,
+    domain_id: DOMAIN_ID || undefined,
+    customer_mobile: opts?.customerMobile || undefined,
+    service_ids: opts?.serviceIds?.length ? opts.serviceIds : undefined,
+    category_ids: opts?.categoryIds?.length ? opts.categoryIds : undefined,
   });
   return res.data?.data;
 }

@@ -273,6 +273,9 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
         code: couponInput.trim().toUpperCase(),
         order_amount: resolvedPrice,
         domain_id: domainId || undefined,
+        customer_mobile: customer?.mobile || undefined,
+        service_ids: selectedService ? [selectedService.service_id] : undefined,
+        category_ids: selectedService?.category_id ? [selectedService.category_id] : undefined,
       });
       const d = res.data.data;
       setCouponCode(d.code);
