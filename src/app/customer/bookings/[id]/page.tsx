@@ -513,7 +513,7 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
       </div>
       <div className="divide-y divide-ink-50">
         {invoices.map((inv) => {
-          const isPaid = inv.payment_status === "PAID";
+          const isPaid = inv.payment_status === "PAID" || inv.has_pay_later === true;
           const balanceDue = Number(inv.balance_due ?? inv.total_amount ?? 0);
           const isOpen = expanded === inv.id;
           const detail = details[inv.id];
@@ -527,8 +527,11 @@ function InvoiceCard({ bookingId }: { bookingId: string }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-ink-900 text-sm">{inv.invoice_number}</p>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isPaid ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"}`}>
-                    {isPaid ? "✅ Paid" : "⏳ Payment Pending"}
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    inv.payment_status === "PAID" ? "bg-green-50 text-green-700"
+                    : inv.has_pay_later ? "bg-blue-50 text-blue-700"
+                    : "bg-orange-50 text-orange-700"}`}>
+                    {inv.payment_status === "PAID" ? "✅ Paid" : inv.has_pay_later ? "🕐 Pay Later" : "⏳ Payment Pending"}
                   </span>
                 </div>
                 <div className="text-right">
