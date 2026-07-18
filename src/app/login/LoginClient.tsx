@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import * as auth from "@/lib/auth";
+import OnboardingGate from "@/components/OnboardingGate";
 
 interface Props {
   siteName: string;
@@ -38,6 +39,8 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
   const [profileError, setProfileError] = useState("");
   /* Pending session — held until profile is completed */
   const [pendingSession, setPendingSession] = useState<{ user: any; customer: any } | null>(null);
+  /* Track when the full onboarding gate (name + address) is complete */
+  const [onboardingDone, setOnboardingDone] = useState(false);
 
   /* Already logged in → skip straight to destination */
   useEffect(() => {
@@ -130,7 +133,7 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
     }
   };
 
-  /* ── Profile completion ─────────────────────────────────────────────── */
+  /* ── Profile completion (name+email) — address handled by OnboardingGate ──── */
   const handleProfileSave = async () => {
     if (!profileName.trim()) { setProfileError("Please enter your name."); return; }
     setProfileSaving(true); setProfileError("");
@@ -139,19 +142,25 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
         name:  profileName.trim(),
         email: profileEmail.trim() || undefined,
       });
-      /* Refresh customer so context has the real name */
+      /* Refresh customer so context + OnboardingGate see the new name */
       const fresh = await auth.ensureCustomerProfile();
       if (pendingSession) {
         setSession(pendingSession.user, fresh ?? pendingSession.customer);
       }
       setProfileModal(false);
-      setPendingSession(null);
-      router.replace(redirect);
+      // Don't redirect yet — OnboardingGate will take over for address step
     } catch (e: any) {
       setProfileError(e?.response?.data?.message ?? "Could not save profile. Please try again.");
     } finally {
       setProfileSaving(false);
     }
+  };
+
+  /* Called by OnboardingGate when name + address are both done */
+  const handleOnboardingComplete = () => {
+    setOnboardingDone(true);
+    setPendingSession(null);
+    router.replace(redirect);
   };
 
   /* ── Render ───────────────────────────────────────────────────────────── */
@@ -351,6 +360,15 @@ export default function LoginClient({ siteName, logoUrl, brand }: Props) {
             </p>
           </div>
         </div>
+      )}
+
+      {/* ── OnboardingGate: address step after profile name saved ──────────── */}
+      {!profileModal && !onboardingDone && isLoggedIn && (
+        <OnboardingGate
+          brand={brand}
+          mobile={mobile}
+          onComplete={handleOnboardingComplete}
+        />
       )}
     </div>
   );

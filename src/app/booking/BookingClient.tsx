@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCity } from "@/context/CityContext";
 import * as customerLib from "@/lib/customer";
 import { getDomainPageData, getServiceCityPrices, resolveCityPrice, getDomainCities } from "@/lib/domain";
+import OnboardingGate from "@/components/OnboardingGate";
 import { CustomerAddress, City, DomainService, ServiceCityPrice } from "@/types";
 
 // Canonical slot values stored in DB — HH:MM-HH:MM (24h)
@@ -391,48 +392,7 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
     hydrated && isLoggedIn &&
     (!_cName || PLACEHOLDER_NAMES.has(_cName.toLowerCase()) || !_cMobile);
 
-  if (isProfileIncomplete) {
-    return (
-      <div className="min-h-screen bg-ink-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl"
-            style={{ background: "rgba(242,101,34,0.1)" }}>👤</div>
-          <h2 className="text-xl font-bold text-ink-900 mb-2">Complete Your Profile</h2>
-          <p className="text-ink-500 text-sm mb-6">
-            We need your <strong>name</strong> and <strong>mobile number</strong> before you can book a service.
-            This helps our technicians contact you.
-          </p>
-          <div className="text-left space-y-3 mb-6">
-            {(!_cName || PLACEHOLDER_NAMES.has(_cName.toLowerCase())) && (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
-                <span className="text-lg">✏️</span>
-                <span>Name is missing or not yet set</span>
-              </div>
-            )}
-            {!_cMobile && (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
-                <span className="text-lg">📱</span>
-                <span>Mobile number is missing</span>
-              </div>
-            )}
-          </div>
-          <a
-            href="/customer/profile"
-            className="block w-full text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity text-center"
-            style={{ background: "#F26522" }}
-          >
-            Update My Profile →
-          </a>
-          <button
-            onClick={() => window.history.back()}
-            className="mt-3 w-full border-2 border-ink-200 text-ink-600 font-medium py-3 rounded-xl hover:bg-ink-50 transition-colors"
-          >
-            ← Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Profile gate now handled by OnboardingGate modal overlay (non-blocking page render)
 
   /* ── Confirmation screen ──────────────────────────────────────────────── */
   if (submitted) {
@@ -512,6 +472,15 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
   const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
 
   return (
+    <>
+    {/* ── Onboarding Gate Modal (non-dismissible for new customers) ── */}
+    {isProfileIncomplete && (
+      <OnboardingGate
+        brand={brand}
+        mobile={customer?.mobile ?? ""}
+        onComplete={() => { refreshCustomer(); }}
+      />
+    )}
     <div className="min-h-screen bg-ink-50">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="text-center mb-8">
@@ -952,5 +921,6 @@ export default function BookingClient({ brand, phone, services, domainId }: Prop
         </p>
       </div>
     </div>
+    </>
   );
 }

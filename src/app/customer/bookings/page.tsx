@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import * as customerLib from "@/lib/customer";
 import { Booking } from "@/types";
 import { DOMAIN_ID } from "@/lib/config";
+import OnboardingGate from "@/components/OnboardingGate";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 const TERMINAL_AS_COMPLETED = ["PAID","CLOSED","SETTLED","INVOICE_GENERATED","PAYMENT_PENDING"];
@@ -50,7 +51,12 @@ const ACTIVE_FOR_CANCEL = ["PENDING","CONFIRMED","ASSIGNED","ACCEPTED","EN_ROUTE
 const WS_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/^https/, "wss").replace(/^http(?!s)/, "ws").replace("/api/v1", "");
 
 export default function MyBookingsPage() {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, customer } = useAuth();
+  const BRAND = "#1A3FA4";
+  const PLACEHOLDER_NAMES = new Set(["new customer", "new user", "customer", "user", "new"]);
+  const isProfileIncomplete =
+    isLoggedIn && (!customer?.name || PLACEHOLDER_NAMES.has((customer.name ?? "").trim().toLowerCase()));
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // List state
   const [bookings, setBookings]   = useState<Booking[]>([]);
@@ -298,9 +304,15 @@ export default function MyBookingsPage() {
         <h2 className="text-lg font-bold text-ink-900">
           My Bookings <span className="text-ink-400 font-normal text-base">({total})</span>
         </h2>
-        <Link href="/booking" className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 transition-colors">
+        <button
+          onClick={() => {
+            if (isProfileIncomplete) { setShowOnboarding(true); }
+            else { window.location.href = "/booking"; }
+          }}
+          className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 transition-colors"
+        >
           + New Booking
-        </Link>
+        </button>
       </div>
 
       {/* Search */}
@@ -329,7 +341,15 @@ export default function MyBookingsPage() {
           <p className="text-4xl mb-3">📋</p>
           <p className="text-ink-700 font-semibold mb-1">No bookings found</p>
           <p className="text-ink-400 text-sm mb-5">{filter==="ALL"?"You haven't made any bookings yet.":  `No ${filter.toLowerCase().replace(/_/g," ")} bookings.`}</p>
-          <Link href="/booking" className="inline-block text-sm font-semibold text-white px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 transition-colors">Book a Service</Link>
+          <button
+            onClick={() => {
+              if (isProfileIncomplete) { setShowOnboarding(true); }
+              else { window.location.href = "/booking"; }
+            }}
+            className="inline-block text-sm font-semibold text-white px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 transition-colors"
+          >
+            Book a Service
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -797,6 +817,18 @@ export default function MyBookingsPage() {
           </div>
         </div>
       )}
+    {/* ── Onboarding gate for new customers clicking New Booking ── */}
+    {showOnboarding && (
+      <OnboardingGate
+        brand={BRAND}
+        mobile={customer?.mobile ?? ""}
+        skipAddress={false}
+        onComplete={() => {
+          setShowOnboarding(false);
+          window.location.href = "/booking";
+        }}
+      />
+    )}
     </div>
   );
 }
